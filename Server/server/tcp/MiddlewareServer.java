@@ -201,7 +201,7 @@ public class MiddlewareServer
                                 c_out.println(inputLine);
                                 resp_c = c_in.readLine();
                                 if(!resp_r.contains("not") && !resp_c.contains("not") && !resp_f.contains("not")){
-                                    out.println("Response:aaaBill for customer: " + resp_r + "aaa" + resp_f + "aaa" + resp_c);
+                                    out.println("Response:aaaBill for customer:aaa" + resp_r + "aaa" + resp_f + "aaa" + resp_c);
                                 }else{
                                     out.println("Failed to Query Customer");
                                 }
@@ -254,35 +254,29 @@ public class MiddlewareServer
                                     c_out.println("ReserveCar," + xid + "," + customerID + "," + location);
                                     csuccess = !c_in.readLine().contains("not");
                                 }
-                                out.println("Reached -1");
                                 if(room){//reserve a room at the given location
                                     r_out.println("ReserveRoom," + xid + "," + customerID + "," + location);
                                     rsuccess = !r_in.readLine().contains("not");
                                 }
-                                out.println("Reached 0");
                                 for (String flightNum : flightNumbers) {
                                     f_out.println("ReserveFlight," + xid + "," + customerID + "," + flightNum);
-                                    fsuccess = !r_in.readLine().contains("not");
+                                    fsuccess = !f_in.readLine().contains("not");
                                 }
-                                out.println("Reached 1");
                                 if(!csuccess){
-                                    resp += "Reserving car failed.";
+                                    resp += "Reserving car failed.aaa";
                                 }else{
-                                    resp += "Reserving car succeeded.";
+                                    resp += "Reserving car succeeded.aaa";
                                 }
-                                out.println("Reached 2");
                                 if(!rsuccess){
-                                    resp += "Reserving room failed.";
+                                    resp += "Reserving room failed.aaa";
                                 }else{
-                                    resp += "Reserving room succeeded.";
+                                    resp += "Reserving room succeeded.aaa";
                                 }
-                                out.println("Reached 3");
                                 if(!fsuccess){
-                                    resp += flightNumbers.size() > 1 ? "Reserving flights failed."  : "Reserving flight failed.";
+                                    resp += flightNumbers.size() > 1 ? "Reserving flights failed.aaa"  : "Reserving flight failed.aaa";
                                 }else{
-                                    resp += flightNumbers.size() > 1 ? "Reserving flights succeeded."  : "Reserving flight succeeded.";
+                                    resp += flightNumbers.size() > 1 ? "Reserving flights succeeded.aaa"  : "Reserving flight succeeded.aaa";
                                 }
-                                out.println("Reached 4");
                                 out.println("Response: " + resp);
                                 break;
                             }
