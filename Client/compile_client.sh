@@ -1,2 +1,2 @@
 cd client
-javac TCPClient.java
+javac *.java
