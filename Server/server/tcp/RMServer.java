@@ -17,7 +17,7 @@ public class RMServer
         RMServer server = new RMServer();
         server.rm = new ResourceManager(args[0]);
         server.setName(args[0]);
-        server.start(5545);
+        server.start(Integer.parseInt(args[0]));
     }
     
     public void start(int port) throws Exception
@@ -256,10 +256,10 @@ public class RMServer
                     int customerID = toInt(arguments.elementAt(2));
                     
                     if (m_resourceManager.deleteCustomer(id, customerID)) {
-                        out.println("Deleting a customer from the database [xid=" + arguments.elementAt(1) + "]" + "aaa" + "-Customer ID: " + arguments.elementAt(2) + "aaa" + "Customer Deleted");
+                        out.println("Customer Deleted");
                         System.out.println("Customer Deleted");
                     } else {
-                        out.println("Deleting a customer from the database [xid=" + arguments.elementAt(1) + "]" + "aaa" + "-Customer ID: " + arguments.elementAt(2) + "aaa" + "Customer could not be Deleted");
+                        out.println("Customer could not be Deleted");
                         System.out.println("Customer could not be deleted");
                     }
                     break;
@@ -274,7 +274,7 @@ public class RMServer
                     int flightNum = toInt(arguments.elementAt(2));
                     
                     int seats = m_resourceManager.queryFlight(id, flightNum);
-                    out.println("Querying a flight [xid=" + arguments.elementAt(1) + "]" + "aaa" + "-Flight Number: " + arguments.elementAt(2) + "aaa" + "Number of seats available: " + seats);
+                    out.println("Number of seats available: " + seats);
                     System.out.println("Number of seats available: " + seats);
                     break;
                 }
@@ -316,7 +316,8 @@ public class RMServer
                     int customerID = toInt(arguments.elementAt(2));
                     
                     String bill = m_resourceManager.queryCustomerInfo(id, customerID);
-                    out.println("Querying customer information [xid=" + arguments.elementAt(1) + "]" + "aaa" + "-Customer ID: " + arguments.elementAt(2) + "aaa" + bill.replaceAll("\n", "aaa"));
+                    //out.println("Querying customer information [xid=" + arguments.elementAt(1) + "]" + "aaa" + "-Customer ID: " + arguments.elementAt(2) + "aaa" + bill.replaceAll("\n", "aaa"));
+                    out.println(bill);
                     System.out.print(bill);
                     break;               
                 }

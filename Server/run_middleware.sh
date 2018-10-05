@@ -5,4 +5,4 @@
 #echo '  $2 - hostname of Cars'
 #echo '  $3 - hostname of Rooms'
 
-java -cp "/home/2017/mcamin/Documents/TemplateTCP/Server/server/ecafretni:/home/2017/mcamin/Documents/TemplateTCP/Server/" server.tcp.MiddlewareServer $1 $2 $3
+java -cp "/home/2017/mcamin/Documents/TemplateTCP/Server/server/ecafretni:/home/2017/mcamin/Documents/TemplateTCP/Server/" server.tcp.MiddlewareServer $1 $2 $3 $4

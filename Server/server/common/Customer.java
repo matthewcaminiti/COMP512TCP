@@ -53,13 +53,14 @@ public class Customer extends RMItem
 
 	public String getBill()
 	{
-		String s = "Bill for customer " + m_ID + "\n";
+		//String s = "Bill for customer " + m_ID + "\n";
+		String s = "";
 		for (String key : m_reservations.keySet())
 		{
 			ReservedItem item = (ReservedItem) m_reservations.get(key);
 			s += + item.getCount() + " " + item.getReservableItemKey() + " $" + item.getPrice() + "\n";
 		}
-		return s;
+		return s.replaceAll("\n", "aaa");
 	}
 
 	public String toString()

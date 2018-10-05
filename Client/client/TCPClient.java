@@ -21,6 +21,8 @@ public class TCPClient
     {
         out.println(msg);
         String resp = in.readLine();
+        //String resp = "";
+        //while((resp = in.readLine()) == "");
         return resp;
     }
 
@@ -34,7 +36,7 @@ public class TCPClient
     public static void main(String[] args) throws Exception
     {
         TCPClient client = new TCPClient();
-        client.startConnection(args[0], 5545);
+        client.startConnection(args[0], Integer.parseInt(args[1]));
 
         BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in));
         while(true){
@@ -42,7 +44,7 @@ public class TCPClient
             System.out.print((char)27 + "[32;1m\n>] " + (char)27 + "[0m");
             String input = stdin.readLine().trim();
             
-            System.out.println("Sent message: \"" + input + "\"");
+            //System.out.println("Sent message: \"" + input + "\"");
             String response = client.sendMessage(input);
             
             System.out.println(response.replaceAll("a{3}", "\n"));

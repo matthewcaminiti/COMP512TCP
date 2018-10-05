@@ -13,7 +13,7 @@ public class MiddlewareServer
     public ResourceManager rm;
     public String s_name;
     
-    public static int portnum = 5545;
+    public static int portnum = 5523;
     
     
     public static Socket flightSocket;
@@ -30,12 +30,14 @@ public class MiddlewareServer
 
     public static void main(String[] args) throws Exception
     {
-        //arg[0] = flight ip
-        //arg[1] = car ip
-        //arg[2] = room ip
+        //args[0] = flight ip
+        //args[1] = car ip
+        //args[2] = room ip
+        portnum = Integer.parseInt(args[3]);
         MiddlewareServer server = new MiddlewareServer();
         server.rm = new ResourceManager("Middleware");
         server.setName("Middleware");
+        System.out.println("Flight ip: " + args[0].split("@")[1] + "/ Car ip: " + args[1].split("@")[1] + "/ Room ip: " + args[2].split("@")[1]);
         server.start(portnum, args[0].split("@")[1], args[1].split("@")[1], args[2].split("@")[1]);
     }
     
@@ -46,14 +48,17 @@ public class MiddlewareServer
         flightSocket = new Socket(f_ip, portnum);
         f_out = new PrintWriter(flightSocket.getOutputStream(), true);
         f_in = new BufferedReader(new InputStreamReader(flightSocket.getInputStream()));
+        System.out.println("Connected to Flight Server /" + f_ip + ":" + portnum);
         
         roomSocket = new Socket(r_ip, portnum);
         r_out = new PrintWriter(roomSocket.getOutputStream(), true);
         r_in = new BufferedReader(new InputStreamReader(roomSocket.getInputStream()));
+        System.out.println("Connected to Room Server /" + r_ip + ":" + portnum);
         
         carSocket = new Socket(c_ip, portnum);
         c_out = new PrintWriter(carSocket.getOutputStream(), true);
         c_in = new BufferedReader(new InputStreamReader(carSocket.getInputStream()));
+        System.out.println("Connected to Car Server /" + c_ip + ":" + portnum);
 
         while(true){
             new MiddlewareServerHandler(serverSocket.accept()).start();
@@ -91,168 +96,199 @@ public class MiddlewareServer
                     //CLIENT COMMAND HANDLING
                     arguments = parse(inputLine);
                     try{
+                        String resp = "";
+                        String resp_f = "";
+                        String resp_c = "";
+                        String resp_r = "";
                         Command cmd = Command.fromString((String)arguments.elementAt(0));
                         switch(cmd){
-                            case Help:
-                            {
+                            // case Help:
+                            // {
                                 
-                            }
+                            // }
                             case AddFlight:
-                            {
                                 f_out.println(inputLine);
-                                String resp = f_in.readLine();
-                                out.println("Response: " + resp.replaceAll("a{3}", "\n"));
-                            }
+                                resp = f_in.readLine();
+                                out.println("Response: " + resp);
+                                break;
                             case AddCars:
-                            {
                                 c_out.println(inputLine);
-                                String resp = c_in.readLine();
-                                out.println("Response: " + resp.replaceAll("a{3}", "\n"));
-                            }
+                                resp = c_in.readLine();
+                                out.println("Response: " + resp);
+                                break;
                             case AddRooms:
-                            {
                                 r_out.println(inputLine);
-                                String resp = r_in.readLine();
-                                out.println("Response: " + resp.replaceAll("a{3}", "\n"));
-                            }
+                                resp = r_in.readLine();
+                                out.println("Response: " + resp);
+                                break;
                             case AddCustomer:
-                            {
                                 int id = Integer.parseInt(arguments.elementAt(1));
                                 int cid = Integer.parseInt(String.valueOf(id) + String.valueOf(Calendar.getInstance().get(Calendar.MILLISECOND)) + String.valueOf(Math.round(Math.random() * 100 + 1)));
                                 inputLine = "AddCustomerID," + id + "," + cid;
                                 r_out.println(inputLine);
-                                String resp_r = r_in.readLine();
+                                resp_r = r_in.readLine();
                                 f_out.println(inputLine);
-                                String resp_f = f_in.readLine();
+                                resp_f = f_in.readLine();
                                 c_out.println(inputLine);
-                                String resp_c = c_in.readLine();
-                                if(resp_r == resp_f && resp_f == resp_c){
-                                    out.println("Response: " + resp_r.replaceAll("a{3}", "\n"));
+                                resp_c = c_in.readLine();
+                                if(!resp_r.contains("not") && !resp_c.contains("not") && !resp_f.contains("not")){
+                                    out.println("Response: " + resp_r);
                                 }else{
                                     out.println("Failed to Add Customer");
                                 }
-                            }
+                                break;
                             case AddCustomerID:
-                            {
                                 r_out.println(inputLine);
-                                String resp_r = r_in.readLine();
+                                resp_r = r_in.readLine();
                                 f_out.println(inputLine);
-                                String resp_f = f_in.readLine();
+                                resp_f = f_in.readLine();
                                 c_out.println(inputLine);
-                                String resp_c = c_in.readLine();
-                                if(resp_r == resp_f && resp_f == resp_c){
-                                    out.println("Response: " + resp_r.replaceAll("a{3}", "\n"));
+                                resp_c = c_in.readLine();
+                                if(!resp_r.contains("not") && !resp_c.contains("not") && !resp_f.contains("not")){
+                                    out.println("Response: " + resp_r);
                                 }else{
                                     out.println("Failed to Add Customer");
                                 }
-                            }
+                                break;
                             case DeleteFlight:
-                            {
                                 f_out.println(inputLine);
-                                String resp = f_in.readLine();
-                                out.println("Response: " + resp.replaceAll("a{3}", "\n"));
-                            }
+                                resp = f_in.readLine();
+                                out.println("Response: " + resp);
+                                break;
                             case DeleteCars:
-                            {
                                 c_out.println(inputLine);
-                                String resp = c_in.readLine();
-                                out.println("Response: " + resp.replaceAll("a{3}", "\n"));
-                            }
+                                resp = c_in.readLine();
+                                out.println("Response: " + resp);
+                                break;
                             case DeleteRooms:
-                            {
                                 r_out.println(inputLine);
-                                String resp = r_in.readLine();
-                                out.println("Response: " + resp.replaceAll("a{3}", "\n"));
-                            }
+                                resp = r_in.readLine();
+                                out.println("Response: " + resp);
+                                break;
                             case DeleteCustomer:
-                            {
                                 r_out.println(inputLine);
-                                String resp_r = r_in.readLine();
+                                resp_r = r_in.readLine();
                                 f_out.println(inputLine);
-                                String resp_f = f_in.readLine();
+                                resp_f = f_in.readLine();
                                 c_out.println(inputLine);
-                                String resp_c = c_in.readLine();
-                                if(resp_r == resp_f && resp_f == resp_c){
-                                    out.println("Response: " + resp_r.replaceAll("a{3}", "\n"));
+                                resp_c = c_in.readLine();
+                                if(!resp_r.contains("not") && !resp_c.contains("not") && !resp_f.contains("not")){
+                                    out.println("Response: " + resp_r);
                                 }else{
                                     out.println("Failed to Delete Customer");
                                 }
-                            }
+                                break;
                             case QueryFlight:
-                            {
                                 f_out.println(inputLine);
-                                String resp = f_in.readLine();
-                                out.println("Response: " + resp.replaceAll("a{3}", "\n"));
-                            }
+                                resp = f_in.readLine();
+                                out.println("Response: " + resp);
+                                break;
                             case QueryCars:
-                            {
                                 c_out.println(inputLine);
-                                String resp = c_in.readLine();
-                                out.println("Response: " + resp.replaceAll("a{3}", "\n"));
-                            }
+                                resp = c_in.readLine();
+                                out.println("Response: " + resp);
+                                break;
                             case QueryRooms:
-                            {
                                 r_out.println(inputLine);
-                                String resp = r_in.readLine();
-                                out.println("Response: " + resp.replaceAll("a{3}", "\n"));
-                            }
+                                resp = r_in.readLine();
+                                out.println("Response: " + resp);
+                                break;
                             case QueryCustomer:
-                            {
                                 r_out.println(inputLine);
-                                String resp_r = r_in.readLine();
+                                resp_r = r_in.readLine();
                                 f_out.println(inputLine);
-                                String resp_f = f_in.readLine();
+                                resp_f = f_in.readLine();
                                 c_out.println(inputLine);
-                                String resp_c = c_in.readLine();
-                                if(resp_r == resp_f && resp_f == resp_c){
-                                    out.println("Response: " + resp_r.replaceAll("a{3}", "\n"));
+                                resp_c = c_in.readLine();
+                                if(!resp_r.contains("not") && !resp_c.contains("not") && !resp_f.contains("not")){
+                                    out.println("Response:aaaBill for customer: " + resp_r + "aaa" + resp_f + "aaa" + resp_c);
                                 }else{
-                                    out.println("Failed to Delete Customer");
+                                    out.println("Failed to Query Customer");
                                 }
-                            }
+                                break;
                             case QueryFlightPrice:
-                            {
                                 f_out.println(inputLine);
-                                String resp = f_in.readLine();
-                                out.println("Response: " + resp.replaceAll("a{3}", "\n"));
-                            }
+                                resp = f_in.readLine();
+                                out.println("Response: " + resp);
+                                break;
                             case QueryCarsPrice:
-                            {
                                 c_out.println(inputLine);
-                                String resp = c_in.readLine();
-                                out.println("Response: " + resp.replaceAll("a{3}", "\n"));
-                            }
+                                resp = c_in.readLine();
+                                out.println("Response: " + resp);
+                                break;
                             case QueryRoomsPrice:
-                            {
                                 r_out.println(inputLine);
-                                String resp = r_in.readLine();
-                                out.println("Response: " + resp.replaceAll("a{3}", "\n"));
-                            }
+                                resp = r_in.readLine();
+                                out.println("Response: " + resp);
+                                break;
                             case ReserveFlight:
-                            {
                                 f_out.println(inputLine);
-                                String resp = f_in.readLine();
-                                out.println("Response: " + resp.replaceAll("a{3}", "\n"));
-                            }
+                                resp = f_in.readLine();
+                                out.println("Response: " + resp);
+                                break;
                             case ReserveCar:
-                            {
                                 c_out.println(inputLine);
-                                String resp = c_in.readLine();
-                                out.println("Response: " + resp.replaceAll("a{3}", "\n"));
-                            }
+                                resp = c_in.readLine();
+                                out.println("Response: " + resp);
+                                break;
                             case ReserveRoom:
-                            {
                                 r_out.println(inputLine);
-                                String resp = r_in.readLine();
-                                out.println("Response: " + resp.replaceAll("a{3}", "\n"));
-                            }
+                                resp = r_in.readLine();
+                                out.println("Response: " + resp);
+                                break;
                             case Bundle:
                             {
-                                
+                                int xid = toInt(arguments.elementAt(1));
+				                int customerID = toInt(arguments.elementAt(2));
+				                Vector<String> flightNumbers = new Vector<String>();
+				                for (int i = 0; i < arguments.size() - 6; ++i)
+				                {
+					                flightNumbers.addElement(arguments.elementAt(3+i));
+				                }
+                                String location = arguments.elementAt(arguments.size()-3);
+                                boolean car = (new Boolean(arguments.elementAt(arguments.size()-2))).booleanValue();
+                                boolean room = (new Boolean(arguments.elementAt(arguments.size()-1))).booleanValue();
+                                boolean ret = true;
+                                boolean csuccess = false, rsuccess = false, fsuccess = false;
+                                if(car){ //reserve a car at the given location
+                                    c_out.println("ReserveCar," + xid + "," + customerID + "," + location);
+                                    csuccess = !c_in.readLine().contains("not");
+                                }
+                                out.println("Reached -1");
+                                if(room){//reserve a room at the given location
+                                    r_out.println("ReserveRoom," + xid + "," + customerID + "," + location);
+                                    rsuccess = !r_in.readLine().contains("not");
+                                }
+                                out.println("Reached 0");
+                                for (String flightNum : flightNumbers) {
+                                    f_out.println("ReserveFlight," + xid + "," + customerID + "," + flightNum);
+                                    fsuccess = !r_in.readLine().contains("not");
+                                }
+                                out.println("Reached 1");
+                                if(!csuccess){
+                                    resp += "Reserving car failed.";
+                                }else{
+                                    resp += "Reserving car succeeded.";
+                                }
+                                out.println("Reached 2");
+                                if(!rsuccess){
+                                    resp += "Reserving room failed.";
+                                }else{
+                                    resp += "Reserving room succeeded.";
+                                }
+                                out.println("Reached 3");
+                                if(!fsuccess){
+                                    resp += flightNumbers.size() > 1 ? "Reserving flights failed."  : "Reserving flight failed.";
+                                }else{
+                                    resp += flightNumbers.size() > 1 ? "Reserving flights succeeded."  : "Reserving flight succeeded.";
+                                }
+                                out.println("Reached 4");
+                                out.println("Response: " + resp);
+                                break;
                             }
                             case Quit:
                             {
-                                
+                                 break;
                             }
                         }
                     }catch(Exception e){
