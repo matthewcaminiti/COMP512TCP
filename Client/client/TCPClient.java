@@ -48,7 +48,7 @@ public class TCPClient
             String response = client.sendMessage(input);
             
             System.out.println(response.replaceAll("a{3}", "\n"));
-            if(response.equals("cunt")){
+            if(response.equals("Break")){
                 break;
             }
         }
