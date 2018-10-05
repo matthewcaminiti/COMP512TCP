@@ -17,7 +17,7 @@ public class RMServer
         RMServer server = new RMServer();
         server.rm = new ResourceManager(args[0]);
         server.setName(args[0]);
-        server.start(5555);
+        server.start(5545);
     }
     
     public void start(int port) throws Exception

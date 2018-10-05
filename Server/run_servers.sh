@@ -1,7 +1,6 @@
 #!/bin/bash 
-# "$(echo $SSH_CONNECTION | awk '{ print $4 }')"
 #TODO: SPECIFY THE HOSTNAMES OF 4 CS MACHINES (lab1-1, cs-2, etc...)
-MACHINES=(mcamin@lab2-5.cs.mcgill.ca mcamin@lab2-2.cs.mcgill.ca mcamin@lab2-1.cs.mcgill.ca mcamin@lab1-3.cs.mcgill.ca)
+MACHINES=(mcamin@lab1-2.cs.mcgill.ca mcamin@lab2-3.cs.mcgill.ca mcamin@lab2-4.cs.mcgill.ca mcamin@lab2-6.cs.mcgill.ca)
 
 tmux new-session \; \
 	split-window -h \; \
