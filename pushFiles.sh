@@ -7,6 +7,8 @@ cd /Users/matthewcaminiti/Documents/TemplateTCP/Server/Server/ecafretni ;
 scp * mcamin@mimi.cs.mcgill.ca:/home/2017/mcamin/Documents/TemplateTCP/Server/server/ecafretni ;
 cd /Users/matthewcaminiti/Documents/TemplateTCP/Server/Server/tcp ;
 scp * mcamin@mimi.cs.mcgill.ca:/home/2017/mcamin/Documents/TemplateTCP/Server/server/tcp ;
+cd /Users/matthewcaminiti/Documents/TemplateTCP/Server/Server/lockmanager ;
+scp * mcamin@mimi.cs.mcgill.ca:/home/2017/mcamin/Documents/TemplateTCP/Server/server/lockmanager ;
 cd /Users/matthewcaminiti/Documents/TemplateTCP/Server ;
 scp * mcamin@mimi.cs.mcgill.ca:/home/2017/mcamin/Documents/TemplateTCP/Server ;
 cd /Users/matthewcaminiti/Documents/TemplateTCP/Client ;

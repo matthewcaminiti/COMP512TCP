@@ -1,2 +1,2 @@
 cd server
-javac ecafretni/*.java common/*.java tcp/*.java
+javac ecafretni/*.java common/*.java tcp/*.java lockmanager/*.java

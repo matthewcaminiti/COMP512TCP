@@ -459,11 +459,12 @@ public class RMServer
                     }
                     break;
                 }
-                // case Quit:
-				// checkArgumentsCount(1, arguments.size());
+                case Quit:
+				//checkArgumentsCount(1, arguments.size());
                 
-				// System.out.println("Quitting client");
-				// System.exit(0);
+				System.out.println("Quitting client");
+                System.exit(0);
+                break;
             }
         }
         
