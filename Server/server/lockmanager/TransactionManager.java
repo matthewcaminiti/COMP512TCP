@@ -50,7 +50,13 @@ public class TransactionManager
 
     public boolean commit(int transactionId) throws RemoteException, InvalidTransactionException
     {
-        
+        try{
+            if(transactionList.size() > 0){
+                transactionList.remove(transactionList.get(transactionId));
+            }
+        }catch(Exception e){
+            return false;
+        }
         return true;
     }
 
@@ -70,7 +76,7 @@ public class TransactionManager
             LinkedList<String> temp = new LinkedList<String>();
             temp.add(command);
             operationHistory.put(transactionId, temp);
-        }else if(operationHistory.get(transactionId).size() == 0){
+        }else if(operationHistory.get(transactionId) == null){
             LinkedList<String> temp = new LinkedList<String>();
             temp.add(command);
             operationHistory.put(transactionId, temp);

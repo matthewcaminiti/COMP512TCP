@@ -129,128 +129,128 @@ public class MiddlewareServer
                                     //NEED WRITE LOCK FOR FLIGHT
                                     lm.Lock(to.getXId(), "FLIGHT", TransactionLockObject.LockType.LOCK_WRITE);
                                     tm.newOperation(to.getXId(), "FLIGHT", inputLine);
-                                    out.println("Flight Added");
-                                    //innerExecute(inputLine);
+                                    innerExecute(inputLine);
+                                    // out.println("Flight Added");
                                     break;
 
                                     case AddCars:
                                     //NEED WRITE LOCK FOR CAR
                                     lm.Lock(to.getXId(), "CAR", TransactionLockObject.LockType.LOCK_WRITE);
                                     tm.newOperation(to.getXId(), "CAR", inputLine);
-                                    out.println("Flight Added");
-                                    //innerExecute(inputLine);
+                                    innerExecute(inputLine);
+                                    // out.println("Cars Added");
                                     break;
 
                                     case AddRooms:
                                     //NEED WRITE LOCK FOR ROOM
                                     lm.Lock(to.getXId(), "ROOM", TransactionLockObject.LockType.LOCK_WRITE);
                                     tm.newOperation(to.getXId(), "ROOM", inputLine);
-                                    out.println("Flight Added");
-                                    //innerExecute(inputLine);
+                                    innerExecute(inputLine);
+                                    // out.println("Rooms Added");
                                     break;
 
                                     case AddCustomer:
                                     //NEED WRITE LOCK FOR CUSTOMER
                                     lm.Lock(to.getXId(), "CUSTOMER", TransactionLockObject.LockType.LOCK_WRITE);
                                     tm.newOperation(to.getXId(), "CUSTOMER", inputLine);
-                                    out.println("Flight Added");
-                                    //innerExecute(inputLine);
+                                    innerExecute(inputLine);
+                                    // out.println("Customer Added");
                                     break;
 
                                     case AddCustomerID:
                                     //NEED WRITE LOCK FOR CUSTOMER
                                     lm.Lock(to.getXId(), "CUSTOMER", TransactionLockObject.LockType.LOCK_WRITE);
                                     tm.newOperation(to.getXId(), "CUSTOMER", inputLine);
-                                    out.println("Flight Added");
-                                    //innerExecute(inputLine);
+                                    innerExecute(inputLine);
+                                    // out.println("Customer Added");
                                     break;
 
                                     case DeleteFlight:
                                     //NEED WRITE LOCK FOR FLIGHT
                                     lm.Lock(to.getXId(), "FLIGHT", TransactionLockObject.LockType.LOCK_WRITE);
                                     tm.newOperation(to.getXId(), "FLIGHT", inputLine);
-                                    out.println("Flight Added");
-                                    //innerExecute(inputLine);
+                                    innerExecute(inputLine);
+                                    // out.println("Flight Deleted");
                                     break;
 
                                     case DeleteCars:
                                     //NEED WRITE LOCK FOR CAR
                                     lm.Lock(to.getXId(), "CAR", TransactionLockObject.LockType.LOCK_WRITE);
                                     tm.newOperation(to.getXId(), "CAR", inputLine);
-                                    out.println("Flight Added");
-                                    //innerExecute(inputLine);
+                                    // out.println("Flight Added");
+                                    innerExecute(inputLine);
                                     break;
 
                                     case DeleteRooms:
                                     //NEED WRITE LOCK FOR ROOM
                                     lm.Lock(to.getXId(), "ROOM", TransactionLockObject.LockType.LOCK_WRITE);
                                     tm.newOperation(to.getXId(), "ROOM", inputLine);
-                                    out.println("Flight Added");
-                                    //innerExecute(inputLine);
+                                    // out.println("Flight Added");
+                                    innerExecute(inputLine);
                                     break;
 
                                     case DeleteCustomer:
                                     //NEED WRITE LOCK FOR CUSTOMER
                                     lm.Lock(to.getXId(), "CUSTOMER", TransactionLockObject.LockType.LOCK_WRITE);
                                     tm.newOperation(to.getXId(), "CUSTOMER", inputLine);
-                                    out.println("Flight Added");
-                                    //innerExecute(inputLine);
+                                    // out.println("Flight Added");
+                                    innerExecute(inputLine);
                                     break;
 
                                     case QueryFlight:
                                     //NEED READ LOCK FOR FLIGHT
                                     lm.Lock(to.getXId(), "FLIGHT", TransactionLockObject.LockType.LOCK_WRITE);
                                     tm.newOperation(to.getXId(), "FLIGHT", inputLine);
-                                    out.println("Flight Added");
-                                    //innerExecute(inputLine);
+                                    // out.println("Flight Added");
+                                    innerExecute(inputLine);
                                     break;
 
                                     case QueryCars:
                                     //NEED READ LOCK FOR CAR
                                     lm.Lock(to.getXId(), "CAR", TransactionLockObject.LockType.LOCK_WRITE);
                                     tm.newOperation(to.getXId(), "CAR", inputLine);
-                                    out.println("Flight Added");
-                                    //innerExecute(inputLine);
+                                    // out.println("Flight Added");
+                                    innerExecute(inputLine);
                                     break;
 
                                     case QueryRooms:
                                     //NEED READ LOCK FOR ROOM
                                     lm.Lock(to.getXId(), "ROOM", TransactionLockObject.LockType.LOCK_WRITE);
                                     tm.newOperation(to.getXId(), "ROOM", inputLine);
-                                    out.println("Flight Added");
-                                    //innerExecute(inputLine);
+                                    // out.println("Flight Added");
+                                    innerExecute(inputLine);
                                     break;
 
                                     case QueryCustomer:
                                     //NEED READ LOCK FOR CUSTOMER
                                     lm.Lock(to.getXId(), "CUSTOMER", TransactionLockObject.LockType.LOCK_WRITE);
                                     tm.newOperation(to.getXId(), "CUSTOMER", inputLine);
-                                    out.println("Flight Added");
-                                    //innerExecute(inputLine);
+                                    // out.println("Flight Added");
+                                    innerExecute(inputLine);
                                     break;
 
                                     case QueryFlightPrice:
                                     //NEED READ LOCK FOR FLIGHT
                                     lm.Lock(to.getXId(), "FLIGHT", TransactionLockObject.LockType.LOCK_WRITE);
                                     tm.newOperation(to.getXId(), "FLIGHT", inputLine);
-                                    out.println("Flight Added");
-                                    //innerExecute(inputLine);
+                                    // out.println("Flight Added");
+                                    innerExecute(inputLine);
                                     break;
 
                                     case QueryCarsPrice:
                                     //NEED READ LOCK FOR CAR
                                     lm.Lock(to.getXId(), "CAR", TransactionLockObject.LockType.LOCK_WRITE);
                                     tm.newOperation(to.getXId(), "CAR", inputLine);
-                                    out.println("Flight Added");
-                                    //innerExecute(inputLine);
+                                    // out.println("Flight Added");
+                                    innerExecute(inputLine);
                                     break;
 
                                     case QueryRoomsPrice:
                                     //NEED READ LOCK FOR ROOM
                                     lm.Lock(to.getXId(), "ROOM", TransactionLockObject.LockType.LOCK_WRITE);
                                     tm.newOperation(to.getXId(), "ROOM", inputLine);
-                                    out.println("Flight Added");
-                                    //innerExecute(inputLine);
+                                    // out.println("Flight Added");
+                                    innerExecute(inputLine);
                                     break;
 
                                     case ReserveFlight:
@@ -259,8 +259,8 @@ public class MiddlewareServer
                                     lm.Lock(to.getXId(), "CUSTOMER", TransactionLockObject.LockType.LOCK_WRITE);
                                     tm.newOperation(to.getXId(), "FLIGHT", inputLine);
                                     tm.newOperation(to.getXId(), "CUSTOMER", inputLine);
-                                    out.println("Flight Added");
-                                    //innerExecute(inputLine);
+                                    // out.println("Flight Added");
+                                    innerExecute(inputLine);
                                     break;
 
                                     case ReserveCar:
@@ -269,8 +269,8 @@ public class MiddlewareServer
                                     lm.Lock(to.getXId(), "CUSTOMER", TransactionLockObject.LockType.LOCK_WRITE);
                                     tm.newOperation(to.getXId(), "CAR", inputLine);
                                     tm.newOperation(to.getXId(), "CUSTOMER", inputLine);
-                                    out.println("Flight Added");
-                                    //innerExecute(inputLine);
+                                    // out.println("Flight Added");
+                                    innerExecute(inputLine);
                                     break;
 
                                     case ReserveRoom:
@@ -279,8 +279,8 @@ public class MiddlewareServer
                                     lm.Lock(to.getXId(), "CUSTOMER", TransactionLockObject.LockType.LOCK_WRITE);
                                     tm.newOperation(to.getXId(), "ROOM", inputLine);
                                     tm.newOperation(to.getXId(), "CUSTOMER", inputLine);
-                                    out.println("Flight Added");
-                                    //innerExecute(inputLine);
+                                    // out.println("Flight Added");
+                                    innerExecute(inputLine);
                                     break;
 
                                     case Bundle:
@@ -294,8 +294,8 @@ public class MiddlewareServer
                                         tm.newOperation(to.getXId(), "ROOM", inputLine);
                                         tm.newOperation(to.getXId(), "CAR", inputLine);
                                         tm.newOperation(to.getXId(), "CUSTOMER", inputLine);
-                                        out.println("Flight Added");
-                                        //innerExecute(inputLine);
+                                        // out.println("Flight Added");
+                                        innerExecute(inputLine);
                                         break;
                                     }
                                     case Quit:
@@ -318,6 +318,8 @@ public class MiddlewareServer
                                             temp += operationHistory[i] + "...";
                                         }
                                         lm.UnlockAll(to.getXId());
+                                        tm.commit(to.getXId());
+                                        this.to.setXId(-1);
                                         out.println("Commited transaction [" + to.getXId() + "]");
                                         break;
                                     }
@@ -416,9 +418,10 @@ public class MiddlewareServer
                     }
                 }
 
-                public void innerExecute(String inputLine){
+                public String innerExecute(String inputLine){
                     //CLIENT COMMAND HANDLING
                     Vector<String> arguments = parse(inputLine);
+                    String ret = "";
                     try{
                         String resp = "";
                         String resp_f = "";
@@ -433,19 +436,22 @@ public class MiddlewareServer
                                 case AddFlight:
                                 f_out.println(inputLine);
                                 resp = f_in.readLine();
-                                //out.println("Response: " + resp);
+                                ret = resp;
+                                out.println("Response: " + resp);
                                 break;
         
                                 case AddCars:
                                 c_out.println(inputLine);
                                 resp = c_in.readLine();
-                                //out.println("Response: " + resp);
+                                ret = resp;
+                                out.println("Response: " + resp);
                                 break;
         
                                 case AddRooms:
                                 r_out.println(inputLine);
                                 resp = r_in.readLine();
-                                //out.println("Response: " + resp);
+                                ret = resp;
+                                out.println("Response: " + resp);
                                 break;
         
                                 case AddCustomer:
@@ -459,9 +465,11 @@ public class MiddlewareServer
                                 c_out.println(inputLine);
                                 resp_c = c_in.readLine();
                                 if(!resp_r.contains("not") && !resp_c.contains("not") && !resp_f.contains("not")){
-                                    //out.println("Response: " + resp_r);
+                                    ret = resp_r;
+                                    out.println("Response: " + resp_r);
                                 }else{
-                                    //out.println("Failed to Add Customer");
+                                    ret = "Failed to Add Customer";
+                                    out.println("Failed to Add Customer");
                                 }
                                 break;
         
@@ -473,28 +481,33 @@ public class MiddlewareServer
                                 c_out.println(inputLine);
                                 resp_c = c_in.readLine();
                                 if(!resp_r.contains("not") && !resp_c.contains("not") && !resp_f.contains("not")){
-                                    //out.println("Response: " + resp_r);
+                                    ret = resp_r;
+                                    out.println("Response: " + resp_r);
                                 }else{
-                                    //out.println("Failed to Add Customer");
+                                    ret = "Failed to Add Customer";
+                                    out.println("Failed to Add Customer");
                                 }
                                 break;
         
                                 case DeleteFlight:
                                 f_out.println(inputLine);
                                 resp = f_in.readLine();
-                                //out.println("Response: " + resp);
+                                ret = resp;
+                                out.println("Response: " + resp);
                                 break;
         
                                 case DeleteCars:
                                 c_out.println(inputLine);
                                 resp = c_in.readLine();
-                                //out.println("Response: " + resp);
+                                ret = resp;
+                                out.println("Response: " + resp);
                                 break;
         
                                 case DeleteRooms:
                                 r_out.println(inputLine);
                                 resp = r_in.readLine();
-                                //out.println("Response: " + resp);
+                                ret = resp;
+                                out.println("Response: " + resp);
                                 break;
         
                                 case DeleteCustomer:
@@ -505,28 +518,33 @@ public class MiddlewareServer
                                 c_out.println(inputLine);
                                 resp_c = c_in.readLine();
                                 if(!resp_r.contains("not") && !resp_c.contains("not") && !resp_f.contains("not")){
-                                    //out.println("Response: " + resp_r);
+                                    ret = resp_r;
+                                    out.println("Response: " + resp_r);
                                 }else{
-                                    //out.println("Failed to Delete Customer");
+                                    ret = "Failed to Delete Customer";
+                                    out.println("Failed to Delete Customer");
                                 }
                                 break;
         
                                 case QueryFlight:
                                 f_out.println(inputLine);
                                 resp = f_in.readLine();
-                                //out.println("Response: " + resp);
+                                ret = resp;
+                                out.println("Response: " + resp);
                                 break;
         
                                 case QueryCars:
                                 c_out.println(inputLine);
                                 resp = c_in.readLine();
-                                //out.println("Response: " + resp);
+                                ret = resp;
+                                out.println("Response: " + resp);
                                 break;
         
                                 case QueryRooms:
                                 r_out.println(inputLine);
                                 resp = r_in.readLine();
-                                //out.println("Response: " + resp);
+                                ret = resp;
+                                out.println("Response: " + resp);
                                 break;
         
                                 case QueryCustomer:
@@ -537,46 +555,54 @@ public class MiddlewareServer
                                 c_out.println(inputLine);
                                 resp_c = c_in.readLine();
                                 if(!resp_r.contains("not") && !resp_c.contains("not") && !resp_f.contains("not")){
-                                    //out.println("Response:aaaBill for customer:aaa" + resp_r + "aaa" + resp_f + "aaa" + resp_c);
+                                    ret = "Bill for customer:aaa" + resp_r + "aaa" + resp_f + "aaa" + resp_c;
+                                    out.println("Response:aaaBill for customer:aaa" + resp_r + "aaa" + resp_f + "aaa" + resp_c);
                                 }else{
-                                    //out.println("Failed to Query Customer");
+                                    ret = "Failed to Query Customer";
+                                    out.println("Failed to Query Customer");
                                 }
                                 break;
         
                                 case QueryFlightPrice:
                                 f_out.println(inputLine);
                                 resp = f_in.readLine();
-                                //out.println("Response: " + resp);
+                                ret = resp;
+                                out.println("Response: " + resp);
                                 break;
         
                                 case QueryCarsPrice:
                                 c_out.println(inputLine);
                                 resp = c_in.readLine();
-                                //out.println("Response: " + resp);
+                                ret = resp;
+                                out.println("Response: " + resp);
                                 break;
         
                                 case QueryRoomsPrice:
                                 r_out.println(inputLine);
                                 resp = r_in.readLine();
-                                //out.println("Response: " + resp);
+                                ret = resp;
+                                out.println("Response: " + resp);
                                 break;
                                 case ReserveFlight:
                                 
                                 f_out.println(inputLine);
                                 resp = f_in.readLine();
-                                //out.println("Response: " + resp);
+                                ret = resp;
+                                out.println("Response: " + resp);
                                 break;
                                 case ReserveCar:
                                 
                                 c_out.println(inputLine);
                                 resp = c_in.readLine();
-                                //out.println("Response: " + resp);
+                                ret = resp;
+                                out.println("Response: " + resp);
                                 break;
                                 case ReserveRoom:
                                 
                                 r_out.println(inputLine);
                                 resp = r_in.readLine();
-                                //out.println("Response: " + resp);
+                                ret = resp;
+                                out.println("Response: " + resp);
                                 break;
                                 case Bundle:
                                 {
@@ -590,7 +616,7 @@ public class MiddlewareServer
                                     String location = arguments.elementAt(arguments.size()-3);
                                     boolean car = (new Boolean(arguments.elementAt(arguments.size()-2))).booleanValue();
                                     boolean room = (new Boolean(arguments.elementAt(arguments.size()-1))).booleanValue();
-                                    boolean ret = true;
+                                    // boolean ret = true;
                                     boolean csuccess = false, rsuccess = false, fsuccess = false;
                                     if(car){ //reserve a car at the given location
                                         c_out.println("ReserveCar," + xid + "," + customerID + "," + location);
@@ -619,6 +645,7 @@ public class MiddlewareServer
                                     }else{
                                         resp += flightNumbers.size() > 1 ? "Reserving flights succeeded.aaa"  : "Reserving flight succeeded.aaa";
                                     }
+                                    ret = resp;
                                     out.println("Response: " + resp);
                                     break;
                                 }
@@ -626,11 +653,14 @@ public class MiddlewareServer
                                 {
                                     out.println("Command handling error. (Unhandled input)");
                                 }
+                                return ret;
                             }
                         }catch(Exception e){
                             out.println("Command handling error.");
                             e.printStackTrace();
+                            return ret;
                         }
+                        return ret;
                     }
             }
             
