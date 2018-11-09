@@ -66,15 +66,14 @@ public class LockManager
 						if (bConvert.get(0) == true) {
 							//TODO: Lock conversion 
 							//need to add write lock then remove read lock??
-							// this.lockTable.add(xLockObject);
-							// this.lockTable.add(dataLockObject);
+							this.lockTable.add(xLockObject);
+							this.lockTable.add(dataLockObject);
 
-
-							// this.lockTable.remove(new TransactionLockObject(xid, data, TransactionLockObject.LockType.LOCK_READ));
-							//this.lockTable.remove(new DataLockObject(xid, data, TransactionLockObject.LockType.LOCK_READ));
+							this.lockTable.remove(new TransactionLockObject(xid, data, TransactionLockObject.LockType.LOCK_READ));
+							this.lockTable.remove(new DataLockObject(xid, data, TransactionLockObject.LockType.LOCK_READ));
 							
-							((TransactionLockObject) this.lockTable.get(xLockObject)).setLockType(TransactionLockObject.LockType.LOCK_WRITE);
-							((DataLockObject) this.lockTable.get(dataLockObject)).setLockType(TransactionLockObject.LockType.LOCK_WRITE);
+							//((TransactionLockObject) this.lockTable.get(xLockObject)).setLockType(TransactionLockObject.LockType.LOCK_WRITE);
+							//((DataLockObject) this.lockTable.get(dataLockObject)).setLockType(TransactionLockObject.LockType.LOCK_WRITE);
 
 							Trace.info("LM::lock(" + xid + ", " + data + ", " + lockType + ") converted");
 						} else {

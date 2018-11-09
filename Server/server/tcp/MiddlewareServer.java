@@ -92,576 +92,782 @@ public class MiddlewareServer
         {
             this.clientSocket = socket;
         }
-            public void run()
-            {
-                try{
-                    out = new PrintWriter(clientSocket.getOutputStream(), true);
-                    in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-                    Vector<String> arguments = new Vector<String>();
-                    String inputLine;
-                    boolean isStarted = false;
-                    while((inputLine = in.readLine()) != null){
-                        //CLIENT COMMAND HANDLING
-                        arguments = parse(inputLine);
-                        try{
-                            String resp = "";
-                            String resp_f = "";
-                            String resp_c = "";
-                            String resp_r = "";
-                            Command cmd = Command.fromString((String)arguments.elementAt(0));
-                            if(isStarted && (!cmd.equals(Command.Quit) || !cmd.equals(Command.Shutdown))){
-                                if(to.getXId() != Integer.parseInt(arguments.elementAt(1))){
-                                    //xid does NOT exist!
-                                    out.println("xid does NOT exist!");
-                                    break;
-                                }
-                            }
-                            if(!isStarted && !cmd.equals(Command.Start)){
-                                out.println("Need to start a transaction (Start)");
-                                continue;
-                            }
-                            switch(cmd){
-                                    // case Help:
-                                    // {
-                                    
-                                    // }
-                                    case AddFlight:
-                                    //NEED WRITE LOCK FOR FLIGHT
-                                    lm.Lock(to.getXId(), "FLIGHT", TransactionLockObject.LockType.LOCK_WRITE);
-                                    tm.newOperation(to.getXId(), "FLIGHT", inputLine);
-                                    innerExecute(inputLine);
-                                    // out.println("Flight Added");
-                                    break;
-
-                                    case AddCars:
-                                    //NEED WRITE LOCK FOR CAR
-                                    lm.Lock(to.getXId(), "CAR", TransactionLockObject.LockType.LOCK_WRITE);
-                                    tm.newOperation(to.getXId(), "CAR", inputLine);
-                                    innerExecute(inputLine);
-                                    // out.println("Cars Added");
-                                    break;
-
-                                    case AddRooms:
-                                    //NEED WRITE LOCK FOR ROOM
-                                    lm.Lock(to.getXId(), "ROOM", TransactionLockObject.LockType.LOCK_WRITE);
-                                    tm.newOperation(to.getXId(), "ROOM", inputLine);
-                                    innerExecute(inputLine);
-                                    // out.println("Rooms Added");
-                                    break;
-
-                                    case AddCustomer:
-                                    //NEED WRITE LOCK FOR CUSTOMER
-                                    lm.Lock(to.getXId(), "CUSTOMER", TransactionLockObject.LockType.LOCK_WRITE);
-                                    tm.newOperation(to.getXId(), "CUSTOMER", inputLine);
-                                    innerExecute(inputLine);
-                                    // out.println("Customer Added");
-                                    break;
-
-                                    case AddCustomerID:
-                                    //NEED WRITE LOCK FOR CUSTOMER
-                                    lm.Lock(to.getXId(), "CUSTOMER", TransactionLockObject.LockType.LOCK_WRITE);
-                                    tm.newOperation(to.getXId(), "CUSTOMER", inputLine);
-                                    innerExecute(inputLine);
-                                    // out.println("Customer Added");
-                                    break;
-
-                                    case DeleteFlight:
-                                    //NEED WRITE LOCK FOR FLIGHT
-                                    lm.Lock(to.getXId(), "FLIGHT", TransactionLockObject.LockType.LOCK_WRITE);
-                                    tm.newOperation(to.getXId(), "FLIGHT", inputLine);
-                                    innerExecute(inputLine);
-                                    // out.println("Flight Deleted");
-                                    break;
-
-                                    case DeleteCars:
-                                    //NEED WRITE LOCK FOR CAR
-                                    lm.Lock(to.getXId(), "CAR", TransactionLockObject.LockType.LOCK_WRITE);
-                                    tm.newOperation(to.getXId(), "CAR", inputLine);
-                                    // out.println("Flight Added");
-                                    innerExecute(inputLine);
-                                    break;
-
-                                    case DeleteRooms:
-                                    //NEED WRITE LOCK FOR ROOM
-                                    lm.Lock(to.getXId(), "ROOM", TransactionLockObject.LockType.LOCK_WRITE);
-                                    tm.newOperation(to.getXId(), "ROOM", inputLine);
-                                    // out.println("Flight Added");
-                                    innerExecute(inputLine);
-                                    break;
-
-                                    case DeleteCustomer:
-                                    //NEED WRITE LOCK FOR CUSTOMER
-                                    lm.Lock(to.getXId(), "CUSTOMER", TransactionLockObject.LockType.LOCK_WRITE);
-                                    tm.newOperation(to.getXId(), "CUSTOMER", inputLine);
-                                    // out.println("Flight Added");
-                                    innerExecute(inputLine);
-                                    break;
-
-                                    case QueryFlight:
-                                    //NEED READ LOCK FOR FLIGHT
-                                    lm.Lock(to.getXId(), "FLIGHT", TransactionLockObject.LockType.LOCK_WRITE);
-                                    tm.newOperation(to.getXId(), "FLIGHT", inputLine);
-                                    // out.println("Flight Added");
-                                    innerExecute(inputLine);
-                                    break;
-
-                                    case QueryCars:
-                                    //NEED READ LOCK FOR CAR
-                                    lm.Lock(to.getXId(), "CAR", TransactionLockObject.LockType.LOCK_WRITE);
-                                    tm.newOperation(to.getXId(), "CAR", inputLine);
-                                    // out.println("Flight Added");
-                                    innerExecute(inputLine);
-                                    break;
-
-                                    case QueryRooms:
-                                    //NEED READ LOCK FOR ROOM
-                                    lm.Lock(to.getXId(), "ROOM", TransactionLockObject.LockType.LOCK_WRITE);
-                                    tm.newOperation(to.getXId(), "ROOM", inputLine);
-                                    // out.println("Flight Added");
-                                    innerExecute(inputLine);
-                                    break;
-
-                                    case QueryCustomer:
-                                    //NEED READ LOCK FOR CUSTOMER
-                                    lm.Lock(to.getXId(), "CUSTOMER", TransactionLockObject.LockType.LOCK_WRITE);
-                                    tm.newOperation(to.getXId(), "CUSTOMER", inputLine);
-                                    // out.println("Flight Added");
-                                    innerExecute(inputLine);
-                                    break;
-
-                                    case QueryFlightPrice:
-                                    //NEED READ LOCK FOR FLIGHT
-                                    lm.Lock(to.getXId(), "FLIGHT", TransactionLockObject.LockType.LOCK_WRITE);
-                                    tm.newOperation(to.getXId(), "FLIGHT", inputLine);
-                                    // out.println("Flight Added");
-                                    innerExecute(inputLine);
-                                    break;
-
-                                    case QueryCarsPrice:
-                                    //NEED READ LOCK FOR CAR
-                                    lm.Lock(to.getXId(), "CAR", TransactionLockObject.LockType.LOCK_WRITE);
-                                    tm.newOperation(to.getXId(), "CAR", inputLine);
-                                    // out.println("Flight Added");
-                                    innerExecute(inputLine);
-                                    break;
-
-                                    case QueryRoomsPrice:
-                                    //NEED READ LOCK FOR ROOM
-                                    lm.Lock(to.getXId(), "ROOM", TransactionLockObject.LockType.LOCK_WRITE);
-                                    tm.newOperation(to.getXId(), "ROOM", inputLine);
-                                    // out.println("Flight Added");
-                                    innerExecute(inputLine);
-                                    break;
-
-                                    case ReserveFlight:
-                                    //NEED WRITE LOCK FOR FLIGHT, CUSTOMER
-                                    lm.Lock(to.getXId(), "FLIGHT", TransactionLockObject.LockType.LOCK_WRITE);
-                                    lm.Lock(to.getXId(), "CUSTOMER", TransactionLockObject.LockType.LOCK_WRITE);
-                                    tm.newOperation(to.getXId(), "FLIGHT", inputLine);
-                                    tm.newOperation(to.getXId(), "CUSTOMER", inputLine);
-                                    // out.println("Flight Added");
-                                    innerExecute(inputLine);
-                                    break;
-
-                                    case ReserveCar:
-                                    //NEED WRITE LOCK FOR CAR, CUSTOMER
-                                    lm.Lock(to.getXId(), "CAR", TransactionLockObject.LockType.LOCK_WRITE);
-                                    lm.Lock(to.getXId(), "CUSTOMER", TransactionLockObject.LockType.LOCK_WRITE);
-                                    tm.newOperation(to.getXId(), "CAR", inputLine);
-                                    tm.newOperation(to.getXId(), "CUSTOMER", inputLine);
-                                    // out.println("Flight Added");
-                                    innerExecute(inputLine);
-                                    break;
-
-                                    case ReserveRoom:
-                                    //NEED WRITE LOCK FOR ROOM, CUSTOMER
-                                    lm.Lock(to.getXId(), "ROOM", TransactionLockObject.LockType.LOCK_WRITE);
-                                    lm.Lock(to.getXId(), "CUSTOMER", TransactionLockObject.LockType.LOCK_WRITE);
-                                    tm.newOperation(to.getXId(), "ROOM", inputLine);
-                                    tm.newOperation(to.getXId(), "CUSTOMER", inputLine);
-                                    // out.println("Flight Added");
-                                    innerExecute(inputLine);
-                                    break;
-
-                                    case Bundle:
-                                    {
-                                        //NEED WRITE LOCK FOR FLIGHT, ROOM, CAR, CUSTOMER
-                                        lm.Lock(to.getXId(), "FLIGHT", TransactionLockObject.LockType.LOCK_WRITE);
-                                        lm.Lock(to.getXId(), "ROOM", TransactionLockObject.LockType.LOCK_WRITE);
-                                        lm.Lock(to.getXId(), "CAR", TransactionLockObject.LockType.LOCK_WRITE);
-                                        lm.Lock(to.getXId(), "CUSTOMER", TransactionLockObject.LockType.LOCK_WRITE);
-                                        tm.newOperation(to.getXId(), "FLIGHT", inputLine);
-                                        tm.newOperation(to.getXId(), "ROOM", inputLine);
-                                        tm.newOperation(to.getXId(), "CAR", inputLine);
-                                        tm.newOperation(to.getXId(), "CUSTOMER", inputLine);
-                                        // out.println("Flight Added");
-                                        innerExecute(inputLine);
-                                        break;
-                                    }
-                                    case Quit:
-                                    {
-                                        break;
-                                    }
-                                    case Start:
-                                    {
-                                        this.to = tm.start();
-                                        out.println("Your transaction ID: " + to.getXId());
-                                        isStarted = true;
-                                        break;
-                                    }
-                                    case Commit:
-                                    {
-                                        String[] operationHistory = tm.getOperationHistory(to.getXId());
-                                        String temp = "";
-                                        for(int i=0; i < operationHistory.length; i++){
-                                            innerExecute(operationHistory[i]);
-                                            temp += operationHistory[i] + "...";
-                                        }
-                                        lm.UnlockAll(to.getXId());
-                                        tm.commit(to.getXId());
-                                        this.to.setXId(-1);
-                                        out.println("Commited transaction [" + to.getXId() + "]");
-                                        break;
-                                    }
-                                    case Abort:
-                                    {
-                                        String[] operationHistory = tm.getOperationHistory(to.getXId());
-                                        for(int i=0; i < operationHistory.length; i++){
-                                            Vector<String> args = parse(operationHistory[i]);
-                                            Command usedCmd = Command.fromString((String)args.elementAt(0));
-                                            switch(usedCmd){
-                                                case AddFlight:{
-                                                    innerExecute("DeleteFlight," +  to.getXId() + "," + args.elementAt(2));
-                                                    break;
-                                                }
-                                                case AddCars:{
-                                                    innerExecute("DeleteCars," + to.getXId() + "," + args.elementAt(2));
-                                                    break;
-                                                }
-                                                case AddRooms:{
-                                                    innerExecute("DeleteRooms," + to.getXId() + "," + args.elementAt(2));
-                                                    break;
-                                                }
-                                                case AddCustomer:{
-                                                    //NEED TO FIND AUTO GENERATED ID TO DELETE!!
-                                                    //innerExecute("DeleteCustomer," + to.getXId() + "," + args.elementAt(2));
-                                                    break;
-                                                }
-                                                case AddCustomerID:{
-                                                    innerExecute("DeleteCustomer," + to.getXId() + "," + args.elementAt(2));
-                                                    break;
-                                                }
-                                                case DeleteFlight:{
-                                                    
-                                                    break;
-                                                }
-                                                case DeleteCars:{
-
-                                                    break;
-                                                }
-                                                case DeleteRooms:{
-
-                                                    break;
-                                                }
-                                                case DeleteCustomer:{
-
-                                                    break;
-                                                }
-                                                case ReserveFlight:{
-
-                                                    break;
-                                                }
-                                                case ReserveCar:{
-
-                                                    break;
-                                                }
-                                                case ReserveRoom:{
-
-                                                    break;
-                                                }
-                                                case Bundle:{
-
-                                                    break;
-                                                }
-                                                default:
-                                                //was either a read or inconsequential
-                                                break;
-                                            }
-                                        }
-                                        break;
-                                    }
-                                    case Shutdown:
-                                    {
-                                        f_out.println("Quit");
-                                        c_out.println("Quit");
-                                        r_out.println("Quit");
-                                        System.exit(0);
-                                        break;
-                                    }
-                                    default:
-                                    {
-                                        out.println("Command handling error. (Unhandled input)");
-                                    }
-                                }
-                            }catch(Exception e){
-                                out.println("Command handling error.");
-                                e.printStackTrace();
-                            }
-                            
-                            //out.println("Success!");
-                        }
-                        in.close();
-                        out.close();
-                        clientSocket.close();
-                    }catch(Exception e){
-                        e.printStackTrace();
-                    }
-                }
-
-                public String innerExecute(String inputLine){
+        public void run()
+        {
+            try{
+                out = new PrintWriter(clientSocket.getOutputStream(), true);
+                in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+                Vector<String> arguments = new Vector<String>();
+                String inputLine;
+                boolean isStarted = false;
+                while((inputLine = in.readLine()) != null){
                     //CLIENT COMMAND HANDLING
-                    Vector<String> arguments = parse(inputLine);
-                    String ret = "";
+                    arguments = parse(inputLine);
                     try{
                         String resp = "";
                         String resp_f = "";
                         String resp_c = "";
                         String resp_r = "";
                         Command cmd = Command.fromString((String)arguments.elementAt(0));
+                        if(isStarted && !cmd.equals(Command.Shutdown) && !cmd.equals(Command.Timeout)){
+                            if(cmd.equals(Command.Commit) && arguments.size() == 1){
+                                out.println("Please enter XID to commit");
+                                continue;
+                            }
+                            if(to.getXId() != Integer.parseInt(arguments.elementAt(1))){
+                                //xid does NOT exist!
+                                out.println("xid does NOT exist!");
+                                continue;
+                            }
+                        }
+                        if(!isStarted && !cmd.equals(Command.Start)){
+                            out.println("Need to start a transaction (Start)");
+                            continue;
+                        }
                         switch(cmd){
                             // case Help:
                             // {
                                 
                                 // }
                                 case AddFlight:
-                                f_out.println(inputLine);
-                                resp = f_in.readLine();
-                                ret = resp;
-                                out.println("Response: " + resp);
+                                //NEED WRITE LOCK FOR FLIGHT
+                                lm.Lock(to.getXId(), "FLIGHT", TransactionLockObject.LockType.LOCK_WRITE);
+                                tm.newOperation(to.getXId(), "FLIGHT", inputLine);
+                                tm.newResponse(to.getXId(), innerExecute(inputLine, true));
+                                // out.println("Flight Added");
                                 break;
-        
+                                
                                 case AddCars:
-                                c_out.println(inputLine);
-                                resp = c_in.readLine();
-                                ret = resp;
-                                out.println("Response: " + resp);
+                                //NEED WRITE LOCK FOR CAR
+                                lm.Lock(to.getXId(), "CAR", TransactionLockObject.LockType.LOCK_WRITE);
+                                tm.newOperation(to.getXId(), "CAR", inputLine);
+                                tm.newResponse(to.getXId(), innerExecute(inputLine, true));
+                                // out.println("Cars Added");
                                 break;
-        
+                                
                                 case AddRooms:
-                                r_out.println(inputLine);
-                                resp = r_in.readLine();
-                                ret = resp;
-                                out.println("Response: " + resp);
+                                //NEED WRITE LOCK FOR ROOM
+                                lm.Lock(to.getXId(), "ROOM", TransactionLockObject.LockType.LOCK_WRITE);
+                                tm.newOperation(to.getXId(), "ROOM", inputLine);
+                                tm.newResponse(to.getXId(), innerExecute(inputLine, true));
+                                // out.println("Rooms Added");
                                 break;
-        
+                                
                                 case AddCustomer:
-                                int id = Integer.parseInt(arguments.elementAt(1));
-                                int cid = Integer.parseInt(String.valueOf(id) + String.valueOf(Calendar.getInstance().get(Calendar.MILLISECOND)) + String.valueOf(Math.round(Math.random() * 100 + 1)));
-                                inputLine = "AddCustomerID," + id + "," + cid;
-                                r_out.println(inputLine);
-                                resp_r = r_in.readLine();
-                                f_out.println(inputLine);
-                                resp_f = f_in.readLine();
-                                c_out.println(inputLine);
-                                resp_c = c_in.readLine();
-                                if(!resp_r.contains("not") && !resp_c.contains("not") && !resp_f.contains("not")){
-                                    ret = resp_r;
-                                    out.println("Response: " + resp_r);
-                                }else{
-                                    ret = "Failed to Add Customer";
-                                    out.println("Failed to Add Customer");
-                                }
+                                //NEED WRITE LOCK FOR CUSTOMER
+                                lm.Lock(to.getXId(), "CUSTOMER", TransactionLockObject.LockType.LOCK_WRITE);
+                                tm.newOperation(to.getXId(), "CUSTOMER", inputLine);
+                                tm.newResponse(to.getXId(), innerExecute(inputLine, true));
+                                // out.println("Customer Added");
                                 break;
-        
+                                
                                 case AddCustomerID:
-                                r_out.println(inputLine);
-                                resp_r = r_in.readLine();
-                                f_out.println(inputLine);
-                                resp_f = f_in.readLine();
-                                c_out.println(inputLine);
-                                resp_c = c_in.readLine();
-                                if(!resp_r.contains("not") && !resp_c.contains("not") && !resp_f.contains("not")){
-                                    ret = resp_r;
-                                    out.println("Response: " + resp_r);
-                                }else{
-                                    ret = "Failed to Add Customer";
-                                    out.println("Failed to Add Customer");
-                                }
+                                //NEED WRITE LOCK FOR CUSTOMER
+                                lm.Lock(to.getXId(), "CUSTOMER", TransactionLockObject.LockType.LOCK_WRITE);
+                                tm.newOperation(to.getXId(), "CUSTOMER", inputLine);
+                                tm.newResponse(to.getXId(), innerExecute(inputLine, true));
+                                // out.println("Customer Added");
                                 break;
-        
+                                
                                 case DeleteFlight:
-                                f_out.println(inputLine);
-                                resp = f_in.readLine();
-                                ret = resp;
-                                out.println("Response: " + resp);
+                                //NEED WRITE LOCK FOR FLIGHT
+                                lm.Lock(to.getXId(), "FLIGHT", TransactionLockObject.LockType.LOCK_WRITE);
+                                tm.newOperation(to.getXId(), "FLIGHT", inputLine);
+                                tm.newResponse(to.getXId(), innerExecute(inputLine, true));
+                                // out.println("Flight Deleted");
                                 break;
-        
+                                
                                 case DeleteCars:
-                                c_out.println(inputLine);
-                                resp = c_in.readLine();
-                                ret = resp;
-                                out.println("Response: " + resp);
+                                //NEED WRITE LOCK FOR CAR
+                                lm.Lock(to.getXId(), "CAR", TransactionLockObject.LockType.LOCK_WRITE);
+                                tm.newOperation(to.getXId(), "CAR", inputLine);
+                                // out.println("Flight Added");
+                                tm.newResponse(to.getXId(), innerExecute(inputLine, true));
                                 break;
-        
+                                
                                 case DeleteRooms:
-                                r_out.println(inputLine);
-                                resp = r_in.readLine();
-                                ret = resp;
-                                out.println("Response: " + resp);
+                                //NEED WRITE LOCK FOR ROOM
+                                lm.Lock(to.getXId(), "ROOM", TransactionLockObject.LockType.LOCK_WRITE);
+                                tm.newOperation(to.getXId(), "ROOM", inputLine);
+                                // out.println("Flight Added");
+                                tm.newResponse(to.getXId(), innerExecute(inputLine, true));
                                 break;
-        
+                                
                                 case DeleteCustomer:
-                                r_out.println(inputLine);
-                                resp_r = r_in.readLine();
-                                f_out.println(inputLine);
-                                resp_f = f_in.readLine();
-                                c_out.println(inputLine);
-                                resp_c = c_in.readLine();
-                                if(!resp_r.contains("not") && !resp_c.contains("not") && !resp_f.contains("not")){
-                                    ret = resp_r;
-                                    out.println("Response: " + resp_r);
-                                }else{
-                                    ret = "Failed to Delete Customer";
-                                    out.println("Failed to Delete Customer");
-                                }
+                                //NEED WRITE LOCK FOR CUSTOMER
+                                lm.Lock(to.getXId(), "CUSTOMER", TransactionLockObject.LockType.LOCK_WRITE);
+                                tm.newOperation(to.getXId(), "CUSTOMER", inputLine);
+                                // out.println("Flight Added");
+                                tm.newResponse(to.getXId(), innerExecute(inputLine, true));
                                 break;
-        
+                                
                                 case QueryFlight:
-                                f_out.println(inputLine);
-                                resp = f_in.readLine();
-                                ret = resp;
-                                out.println("Response: " + resp);
+                                //NEED READ LOCK FOR FLIGHT
+                                lm.Lock(to.getXId(), "FLIGHT", TransactionLockObject.LockType.LOCK_READ);
+                                tm.newOperation(to.getXId(), "FLIGHT", inputLine);
+                                // out.println("Flight Added");
+                                tm.newResponse(to.getXId(), innerExecute(inputLine, true));
                                 break;
-        
+                                
                                 case QueryCars:
-                                c_out.println(inputLine);
-                                resp = c_in.readLine();
-                                ret = resp;
-                                out.println("Response: " + resp);
+                                //NEED READ LOCK FOR CAR
+                                lm.Lock(to.getXId(), "CAR", TransactionLockObject.LockType.LOCK_READ);
+                                tm.newOperation(to.getXId(), "CAR", inputLine);
+                                // out.println("Flight Added");
+                                tm.newResponse(to.getXId(), innerExecute(inputLine, true));
                                 break;
-        
+                                
                                 case QueryRooms:
-                                r_out.println(inputLine);
-                                resp = r_in.readLine();
-                                ret = resp;
-                                out.println("Response: " + resp);
+                                //NEED READ LOCK FOR ROOM
+                                lm.Lock(to.getXId(), "ROOM", TransactionLockObject.LockType.LOCK_READ);
+                                tm.newOperation(to.getXId(), "ROOM", inputLine);
+                                // out.println("Flight Added");
+                                tm.newResponse(to.getXId(), innerExecute(inputLine, true));
                                 break;
-        
+                                
                                 case QueryCustomer:
-                                r_out.println(inputLine);
-                                resp_r = r_in.readLine();
-                                f_out.println(inputLine);
-                                resp_f = f_in.readLine();
-                                c_out.println(inputLine);
-                                resp_c = c_in.readLine();
-                                if(!resp_r.contains("not") && !resp_c.contains("not") && !resp_f.contains("not")){
-                                    ret = "Bill for customer:aaa" + resp_r + "aaa" + resp_f + "aaa" + resp_c;
-                                    out.println("Response:aaaBill for customer:aaa" + resp_r + "aaa" + resp_f + "aaa" + resp_c);
-                                }else{
-                                    ret = "Failed to Query Customer";
-                                    out.println("Failed to Query Customer");
-                                }
+                                //NEED READ LOCK FOR CUSTOMER
+                                lm.Lock(to.getXId(), "CUSTOMER", TransactionLockObject.LockType.LOCK_READ);
+                                tm.newOperation(to.getXId(), "CUSTOMER", inputLine);
+                                // out.println("Flight Added");
+                                tm.newResponse(to.getXId(), innerExecute(inputLine, true));
                                 break;
-        
+                                
                                 case QueryFlightPrice:
-                                f_out.println(inputLine);
-                                resp = f_in.readLine();
-                                ret = resp;
-                                out.println("Response: " + resp);
+                                //NEED READ LOCK FOR FLIGHT
+                                lm.Lock(to.getXId(), "FLIGHT", TransactionLockObject.LockType.LOCK_READ);
+                                tm.newOperation(to.getXId(), "FLIGHT", inputLine);
+                                // out.println("Flight Added");
+                                tm.newResponse(to.getXId(), innerExecute(inputLine, true));
                                 break;
-        
+                                
                                 case QueryCarsPrice:
-                                c_out.println(inputLine);
-                                resp = c_in.readLine();
-                                ret = resp;
-                                out.println("Response: " + resp);
+                                //NEED READ LOCK FOR CAR
+                                lm.Lock(to.getXId(), "CAR", TransactionLockObject.LockType.LOCK_READ);
+                                tm.newOperation(to.getXId(), "CAR", inputLine);
+                                // out.println("Flight Added");
+                                tm.newResponse(to.getXId(), innerExecute(inputLine, true));
                                 break;
-        
+                                
                                 case QueryRoomsPrice:
-                                r_out.println(inputLine);
-                                resp = r_in.readLine();
-                                ret = resp;
-                                out.println("Response: " + resp);
+                                //NEED READ LOCK FOR ROOM
+                                lm.Lock(to.getXId(), "ROOM", TransactionLockObject.LockType.LOCK_READ);
+                                tm.newOperation(to.getXId(), "ROOM", inputLine);
+                                // out.println("Flight Added");
+                                tm.newResponse(to.getXId(), innerExecute(inputLine, true));
                                 break;
+                                
                                 case ReserveFlight:
-                                
-                                f_out.println(inputLine);
-                                resp = f_in.readLine();
-                                ret = resp;
-                                out.println("Response: " + resp);
+                                //NEED WRITE LOCK FOR FLIGHT, CUSTOMER
+                                lm.Lock(to.getXId(), "FLIGHT", TransactionLockObject.LockType.LOCK_WRITE);
+                                lm.Lock(to.getXId(), "CUSTOMER", TransactionLockObject.LockType.LOCK_WRITE);
+                                tm.newOperation(to.getXId(), "FLIGHT", inputLine);
+                                tm.newOperation(to.getXId(), "CUSTOMER", inputLine);
+                                // out.println("Flight Added");
+                                tm.newResponse(to.getXId(), innerExecute(inputLine, true));
                                 break;
+                                
                                 case ReserveCar:
-                                
-                                c_out.println(inputLine);
-                                resp = c_in.readLine();
-                                ret = resp;
-                                out.println("Response: " + resp);
+                                //NEED WRITE LOCK FOR CAR, CUSTOMER
+                                lm.Lock(to.getXId(), "CAR", TransactionLockObject.LockType.LOCK_WRITE);
+                                lm.Lock(to.getXId(), "CUSTOMER", TransactionLockObject.LockType.LOCK_WRITE);
+                                tm.newOperation(to.getXId(), "CAR", inputLine);
+                                tm.newOperation(to.getXId(), "CUSTOMER", inputLine);
+                                // out.println("Flight Added");
+                                tm.newResponse(to.getXId(), innerExecute(inputLine, true));
                                 break;
+                                
                                 case ReserveRoom:
-                                
-                                r_out.println(inputLine);
-                                resp = r_in.readLine();
-                                ret = resp;
-                                out.println("Response: " + resp);
+                                //NEED WRITE LOCK FOR ROOM, CUSTOMER
+                                lm.Lock(to.getXId(), "ROOM", TransactionLockObject.LockType.LOCK_WRITE);
+                                lm.Lock(to.getXId(), "CUSTOMER", TransactionLockObject.LockType.LOCK_WRITE);
+                                tm.newOperation(to.getXId(), "ROOM", inputLine);
+                                tm.newOperation(to.getXId(), "CUSTOMER", inputLine);
+                                // out.println("Flight Added");
+                                tm.newResponse(to.getXId(), innerExecute(inputLine, true));
                                 break;
+                                
                                 case Bundle:
                                 {
-                                    int xid = toInt(arguments.elementAt(1));
-                                    int customerID = toInt(arguments.elementAt(2));
-                                    Vector<String> flightNumbers = new Vector<String>();
-                                    for (int i = 0; i < arguments.size() - 6; ++i)
-                                    {
-                                        flightNumbers.addElement(arguments.elementAt(3+i));
+                                    //NEED WRITE LOCK FOR FLIGHT, ROOM, CAR, CUSTOMER
+                                    lm.Lock(to.getXId(), "FLIGHT", TransactionLockObject.LockType.LOCK_WRITE);
+                                    lm.Lock(to.getXId(), "ROOM", TransactionLockObject.LockType.LOCK_WRITE);
+                                    lm.Lock(to.getXId(), "CAR", TransactionLockObject.LockType.LOCK_WRITE);
+                                    lm.Lock(to.getXId(), "CUSTOMER", TransactionLockObject.LockType.LOCK_WRITE);
+                                    tm.newOperation(to.getXId(), "FLIGHT", inputLine);
+                                    tm.newOperation(to.getXId(), "ROOM", inputLine);
+                                    tm.newOperation(to.getXId(), "CAR", inputLine);
+                                    tm.newOperation(to.getXId(), "CUSTOMER", inputLine);
+                                    // out.println("Flight Added");
+                                    tm.newResponse(to.getXId(), innerExecute(inputLine, true));
+                                    break;
+                                }
+                                case Quit:
+                                {
+                                    break;
+                                }
+                                case Start:
+                                {
+                                    this.to = tm.start();
+                                    out.println("Your transaction ID: " + to.getXId());
+                                    isStarted = true;
+                                    break;
+                                }
+                                case Commit:
+                                {
+                                    lm.UnlockAll(to.getXId());
+                                    tm.commit(to.getXId());
+                                    isStarted = false;
+                                    out.println("Commited transaction [" + to.getXId() + "]");
+                                    break;
+                                }
+                                case Abort:
+                                {
+                                    tm.commit(to.getXId());
+                                    isStarted = false;
+                                    
+                                    String[] operationHistory = tm.getOperationHistory(Integer.parseInt(arguments.elementAt(1)));
+                                    String[] responseHistory = tm.getResponseHistory(to.getXId());
+                                    LinkedList<String> flightDataHistory = tm.getDataHistory(to.getXId(), "flight");
+                                    LinkedList<String> roomDataHistory = tm.getDataHistory(to.getXId(), "room");
+                                    LinkedList<String> carDataHistory = tm.getDataHistory(to.getXId(), "car");
+                                    LinkedList<String> customerDataHistory = tm.getDataHistory(to.getXId(), "customer");
+                                    
+                                    out.println("Aborted transaction [" + to.getXId() + "]");
+                                    
+                                    System.out.println("Have identified " + operationHistory.length + " operations to undo");
+                                    for(int i = operationHistory.length-1 ; i >= 0 ; i--){
+                                        Vector<String> args = parse(operationHistory[i]);
+                                        Command usedCmd = Command.fromString((String)args.elementAt(0));
+                                        switch(usedCmd){
+                                            case AddFlight:{
+                                                innerExecute("DeleteFlight," +  to.getXId() + "," + args.elementAt(2), false);
+                                                System.out.println("Deleting Flight");
+                                                break;
+                                            }
+                                            case AddCars:{
+                                                innerExecute("DeleteCars," + to.getXId() + "," + args.elementAt(2), false);
+                                                System.out.println("Deleting Cars");
+                                                break;
+                                            }
+                                            case AddRooms:{
+                                                innerExecute("DeleteRooms," + to.getXId() + "," + args.elementAt(2), false);
+                                                System.out.println("Deleting Rooms");
+                                                break;
+                                            }
+                                            case AddCustomer:{
+                                                innerExecute("DeleteCustomer," + to.getXId() + "," + customerDataHistory.removeLast(), false);
+                                                break;
+                                            }
+                                            case AddCustomerID:{
+                                                innerExecute("DeleteCustomer," + to.getXId() + "," + args.elementAt(2), false);
+                                                break;
+                                            }
+                                            case DeleteFlight:{
+                                                String addFlight = flightDataHistory.removeLast();
+                                                String[] argumentz = addFlight.split(",");
+                                                innerExecute("AddFlight," + to.getXId() + "," + argumentz[1] + "," + argumentz[2] + "," + argumentz[3], false);
+                                                break;
+                                            }
+                                            case DeleteCars:{
+                                                String addCars = carDataHistory.removeLast();
+                                                String[] argumentz = addCars.split(",");
+                                                innerExecute("AddCars," + to.getXId() + "," + argumentz[3] + "," + argumentz[2] + "," + argumentz[4], false);
+                                                break;
+                                            }
+                                            case DeleteRooms:{
+                                                String addRooms = roomDataHistory.removeLast();
+                                                String[] argumentz = addRooms.split(",");
+                                                innerExecute("AddRoomss," + to.getXId() + "," + argumentz[3] + "," + argumentz[2] + "," + argumentz[4], false);
+                                                break;
+                                            }
+                                            case DeleteCustomer:{
+                                                String addCustomer = customerDataHistory.removeLast();
+                                                String[] argumentz = addCustomer.split(",");
+                                                innerExecute("AddCustomerID," + to.getXId() + "," + argumentz[1], false);
+                                                break;
+                                            }
+                                            case ReserveFlight:{
+                                                if(flightDataHistory.size() != 0){
+                                                    String addFlight = flightDataHistory.removeLast();
+                                                    String[] argumentz = addFlight.split(",");
+                                                    innerExecute("AddFlight," + to.getXId() + "," + argumentz[1] + ",1," + argumentz[3], false);
+                                                    String fixCustomer = customerDataHistory.removeLast();
+                                                    String[] custArgs = fixCustomer.split(",");
+                                                    innerExecute("RemoveReservation," + to.getXId() + "," + custArgs[1] + "," + argumentz[1] + ",FLIGHT", false);
+                                                }
+                                                break;
+                                            }
+                                            case ReserveCar:{
+                                                //TODO: CLEANUP
+                                                if(carDataHistory.size() != 0){
+                                                    String addCar = carDataHistory.removeLast();
+                                                    String[] argumentz = addCar.split(",");
+                                                    innerExecute("AddCars," + to.getXId() + "," + argumentz[1] + ",1," + argumentz[3], false);
+                                                    String fixCustomer = customerDataHistory.removeLast();
+                                                    String[] custArgs = fixCustomer.split(",");
+                                                    innerExecute("RemoveReservation," + to.getXId() + "," + custArgs[1] + "," + argumentz[1] + ",FLIGHT", false);
+                                                }
+                                                break;
+                                            }
+                                            case ReserveRoom:{
+                                                //TODO: CLEANUP
+                                                if(carDataHistory.size() != 0){
+                                                    String addCar = carDataHistory.removeLast();
+                                                    String[] argumentz = addCar.split(",");
+                                                    innerExecute("AddCars," + to.getXId() + "," + argumentz[1] + ",1," + argumentz[3], false);
+                                                    String fixCustomer = customerDataHistory.removeLast();
+                                                    String[] custArgs = fixCustomer.split(",");
+                                                    innerExecute("RemoveReservation," + to.getXId() + "," + custArgs[1] + "," + argumentz[1] + ",FLIGHT", false);
+                                                }
+                                                break;
+                                            }
+                                            case Bundle:{
+                                                //TODO: COPY PASTA ALL RESERVE UNDO's AND CLEAN
+                                                break;
+                                            }
+                                            default:
+                                            //was either a read or inconsequential
+                                            break;
+                                        }
                                     }
-                                    String location = arguments.elementAt(arguments.size()-3);
-                                    boolean car = (new Boolean(arguments.elementAt(arguments.size()-2))).booleanValue();
-                                    boolean room = (new Boolean(arguments.elementAt(arguments.size()-1))).booleanValue();
-                                    // boolean ret = true;
-                                    boolean csuccess = false, rsuccess = false, fsuccess = false;
-                                    if(car){ //reserve a car at the given location
-                                        c_out.println("ReserveCar," + xid + "," + customerID + "," + location);
-                                        csuccess = !c_in.readLine().contains("not");
+                                    lm.UnlockAll(to.getXId());
+                                    break;
+                                }
+                                case Timeout:
+                                {
+                                    tm.commit(to.getXId());
+                                    isStarted = false;
+                                    
+                                    String[] operationHistory = tm.getOperationHistory(Integer.parseInt(arguments.elementAt(1)));
+                                    String[] responseHistory = tm.getResponseHistory(to.getXId());
+                                    LinkedList<String> flightDataHistory = tm.getDataHistory(to.getXId(), "flight");
+                                    LinkedList<String> roomDataHistory = tm.getDataHistory(to.getXId(), "room");
+                                    LinkedList<String> carDataHistory = tm.getDataHistory(to.getXId(), "car");
+                                    LinkedList<String> customerDataHistory = tm.getDataHistory(to.getXId(), "customer");
+                                    
+                                    out.println("Aborted transaction [" + to.getXId() + "]");
+                                    
+                                    System.out.println("Have identified " + operationHistory.length + " operations to undo");
+                                    for(int i = operationHistory.length-1 ; i >= 0 ; i--){
+                                        Vector<String> args = parse(operationHistory[i]);
+                                        Command usedCmd = Command.fromString((String)args.elementAt(0));
+                                        switch(usedCmd){
+                                            case AddFlight:{
+                                                innerExecute("DeleteFlight," +  to.getXId() + "," + args.elementAt(2), false);
+                                                System.out.println("Deleting Flight");
+                                                break;
+                                            }
+                                            case AddCars:{
+                                                innerExecute("DeleteCars," + to.getXId() + "," + args.elementAt(2), false);
+                                                System.out.println("Deleting Cars");
+                                                break;
+                                            }
+                                            case AddRooms:{
+                                                innerExecute("DeleteRooms," + to.getXId() + "," + args.elementAt(2), false);
+                                                System.out.println("Deleting Rooms");
+                                                break;
+                                            }
+                                            case AddCustomer:{
+                                                innerExecute("DeleteCustomer," + to.getXId() + "," + customerDataHistory.removeLast(), false);
+                                                break;
+                                            }
+                                            case AddCustomerID:{
+                                                innerExecute("DeleteCustomer," + to.getXId() + "," + args.elementAt(2), false);
+                                                break;
+                                            }
+                                            case DeleteFlight:{
+                                                String addFlight = flightDataHistory.removeLast();
+                                                String[] argumentz = addFlight.split(",");
+                                                innerExecute("AddFlight," + to.getXId() + "," + argumentz[1] + "," + argumentz[2] + "," + argumentz[3], false);
+                                                break;
+                                            }
+                                            case DeleteCars:{
+                                                String addCars = carDataHistory.removeLast();
+                                                String[] argumentz = addCars.split(",");
+                                                innerExecute("AddCars," + to.getXId() + "," + argumentz[3] + "," + argumentz[2] + "," + argumentz[4], false);
+                                                break;
+                                            }
+                                            case DeleteRooms:{
+                                                String addRooms = roomDataHistory.removeLast();
+                                                String[] argumentz = addRooms.split(",");
+                                                innerExecute("AddRoomss," + to.getXId() + "," + argumentz[3] + "," + argumentz[2] + "," + argumentz[4], false);
+                                                break;
+                                            }
+                                            case DeleteCustomer:{
+                                                String addCustomer = customerDataHistory.removeLast();
+                                                String[] argumentz = addCustomer.split(",");
+                                                innerExecute("AddCustomerID," + to.getXId() + "," + argumentz[1], false);
+                                                break;
+                                            }
+                                            case ReserveFlight:{
+                                                if(flightDataHistory.size() != 0){
+                                                    String addFlight = flightDataHistory.removeLast();
+                                                    String[] argumentz = addFlight.split(",");
+                                                    innerExecute("AddFlight," + to.getXId() + "," + argumentz[1] + ",1," + argumentz[3], false);
+                                                    String fixCustomer = customerDataHistory.removeLast();
+                                                    String[] custArgs = fixCustomer.split(",");
+                                                    innerExecute("RemoveReservation," + to.getXId() + "," + custArgs[1] + "," + argumentz[1] + ",FLIGHT", false);
+                                                }
+                                                break;
+                                            }
+                                            case ReserveCar:{
+                                                //TODO: CLEANUP
+                                                if(carDataHistory.size() != 0){
+                                                    String addCar = carDataHistory.removeLast();
+                                                    String[] argumentz = addCar.split(",");
+                                                    innerExecute("AddCars," + to.getXId() + "," + argumentz[1] + ",1," + argumentz[3], false);
+                                                    String fixCustomer = customerDataHistory.removeLast();
+                                                    String[] custArgs = fixCustomer.split(",");
+                                                    innerExecute("RemoveReservation," + to.getXId() + "," + custArgs[1] + "," + argumentz[1] + ",FLIGHT", false);
+                                                }
+                                                break;
+                                            }
+                                            case ReserveRoom:{
+                                                //TODO: CLEANUP
+                                                if(carDataHistory.size() != 0){
+                                                    String addCar = carDataHistory.removeLast();
+                                                    String[] argumentz = addCar.split(",");
+                                                    innerExecute("AddCars," + to.getXId() + "," + argumentz[1] + ",1," + argumentz[3], false);
+                                                    String fixCustomer = customerDataHistory.removeLast();
+                                                    String[] custArgs = fixCustomer.split(",");
+                                                    innerExecute("RemoveReservation," + to.getXId() + "," + custArgs[1] + "," + argumentz[1] + ",FLIGHT", false);
+                                                }
+                                                break;
+                                            }
+                                            case Bundle:{
+                                                //TODO: COPY PASTA ALL RESERVE UNDO's AND CLEAN
+                                                break;
+                                            }
+                                            default:
+                                            //was either a read or inconsequential
+                                            break;
+                                        }
                                     }
-                                    if(room){//reserve a room at the given location
-                                        r_out.println("ReserveRoom," + xid + "," + customerID + "," + location);
-                                        rsuccess = !r_in.readLine().contains("not");
-                                    }
-                                    for (String flightNum : flightNumbers) {
-                                        f_out.println("ReserveFlight," + xid + "," + customerID + "," + flightNum);
-                                        fsuccess = !f_in.readLine().contains("not");
-                                    }
-                                    if(!csuccess){
-                                        resp += "Reserving car failed.aaa";
-                                    }else{
-                                        resp += "Reserving car succeeded.aaa";
-                                    }
-                                    if(!rsuccess){
-                                        resp += "Reserving room failed.aaa";
-                                    }else{
-                                        resp += "Reserving room succeeded.aaa";
-                                    }
-                                    if(!fsuccess){
-                                        resp += flightNumbers.size() > 1 ? "Reserving flights failed.aaa"  : "Reserving flight failed.aaa";
-                                    }else{
-                                        resp += flightNumbers.size() > 1 ? "Reserving flights succeeded.aaa"  : "Reserving flight succeeded.aaa";
-                                    }
-                                    ret = resp;
-                                    out.println("Response: " + resp);
+                                    lm.UnlockAll(to.getXId());
+                                    break;
+                                }
+                                case Shutdown:
+                                {
+                                    f_out.println("Quit");
+                                    c_out.println("Quit");
+                                    r_out.println("Quit");
+                                    System.exit(0);
                                     break;
                                 }
                                 default:
                                 {
                                     out.println("Command handling error. (Unhandled input)");
                                 }
-                                return ret;
                             }
                         }catch(Exception e){
                             out.println("Command handling error.");
                             e.printStackTrace();
+                        }
+                        
+                        //out.println("Success!");
+                    }
+                    in.close();
+                    out.close();
+                    clientSocket.close();
+                }catch(Exception e){
+                    e.printStackTrace();
+                }
+            }
+            public String getPreviousData(PrintWriter outStream, BufferedReader inStream, String objType, int xid, String objId){
+                String ret = "";
+                outStream.println("GetData," + xid + "," +  objType + "," +  objId);
+                try{
+                    ret = inStream.readLine();
+                }catch (Exception e){
+                    //TODO: handle IOException
+                }
+                return ret;
+            }
+            public String innerExecute(String inputLine, boolean showPrints){
+                //CLIENT COMMAND HANDLING
+                Vector<String> arguments = parse(inputLine);
+                String ret = "";
+                try{
+                    String resp = "";
+                    String resp_f = "";
+                    String resp_c = "";
+                    String resp_r = "";
+                    Command cmd = Command.fromString((String)arguments.elementAt(0));
+                    int xID = Integer.parseInt(arguments.elementAt(1));
+                    switch(cmd){
+                        // case Help:
+                        // {
+                            
+                            // }
+                            case AddFlight:
+                            tm.newData(xID, "FLIGHT", getPreviousData(f_out, f_in, "FLIGHT", xID, arguments.elementAt(2)));
+                            f_out.println(inputLine);
+                            resp = f_in.readLine();
+                            ret = resp;
+                            if(showPrints) out.println("Response: " + resp);
+                            break;
+                            
+                            case AddCars:
+                            tm.newData(xID, "CAR", getPreviousData(c_out, c_in, "CAR", xID, arguments.elementAt(2)));
+                            c_out.println(inputLine);
+                            resp = c_in.readLine();
+                            ret = resp;
+                            if(showPrints) out.println("Response: " + resp);
+                            break;
+                            
+                            case AddRooms:
+                            tm.newData(xID, "ROOM", getPreviousData(r_out, r_in, "ROOM", xID, arguments.elementAt(2)));
+                            r_out.println(inputLine);
+                            resp = r_in.readLine();
+                            ret = resp;
+                            if(showPrints) out.println("Response: " + resp);
+                            break;
+                            
+                            case AddCustomer:
+                            int id = Integer.parseInt(arguments.elementAt(1));
+                            int cid = Integer.parseInt(String.valueOf(id) + String.valueOf(Calendar.getInstance().get(Calendar.MILLISECOND)) + String.valueOf(Math.round(Math.random() * 100 + 1)));
+                            tm.newData(xID, "CUSTOMER", cid + "");
+                            inputLine = "AddCustomerID," + id + "," + cid;
+                            r_out.println(inputLine);
+                            resp_r = r_in.readLine();
+                            f_out.println(inputLine);
+                            resp_f = f_in.readLine();
+                            c_out.println(inputLine);
+                            resp_c = c_in.readLine();
+                            if(!resp_r.contains("not") && !resp_c.contains("not") && !resp_f.contains("not")){
+                                ret = resp_r;
+                                if(showPrints) out.println("Response: " + resp_r);
+                            }else{
+                                ret = "Failed to Add Customer";
+                                out.println("Failed to Add Customer");
+                            }
+                            break;
+                            
+                            case AddCustomerID:
+                            tm.newData(xID, "CUSTOMER", arguments.elementAt(2));
+                            r_out.println(inputLine);
+                            resp_r = r_in.readLine();
+                            f_out.println(inputLine);
+                            resp_f = f_in.readLine();
+                            c_out.println(inputLine);
+                            resp_c = c_in.readLine();
+                            if(!resp_r.contains("not") && !resp_c.contains("not") && !resp_f.contains("not")){
+                                ret = resp_r;
+                                if(showPrints) out.println("Response: " + resp_r);
+                            }else{
+                                ret = "Failed to Add Customer";
+                                out.println("Failed to Add Customer");
+                            }
+                            break;
+                            
+                            case DeleteFlight:
+                            tm.newData(xID, "FLIGHT", getPreviousData(f_out, f_in, "FLIGHT", xID, arguments.elementAt(2)));
+                            f_out.println(inputLine);
+                            resp = f_in.readLine();
+                            ret = resp;
+                            if(showPrints) out.println("Response: " + resp);
+                            break;
+                            
+                            case DeleteCars:
+                            tm.newData(xID, "CAR", getPreviousData(c_out, c_in, "CAR", xID, arguments.elementAt(2)));
+                            c_out.println(inputLine);
+                            resp = c_in.readLine();
+                            ret = resp;
+                            if(showPrints) out.println("Response: " + resp);
+                            break;
+                            
+                            case DeleteRooms:
+                            tm.newData(xID, "ROOM", getPreviousData(r_out, r_in, "ROOM", xID, arguments.elementAt(2)));
+                            r_out.println(inputLine);
+                            resp = r_in.readLine();
+                            ret = resp;
+                            if(showPrints) out.println("Response: " + resp);
+                            break;
+                            
+                            case DeleteCustomer:
+                            tm.newData(xID, "CUSTOMER", getPreviousData(r_out, r_in, "CUSTOMER", xID, arguments.elementAt(2)));
+                            r_out.println(inputLine);
+                            resp_r = r_in.readLine();
+                            f_out.println(inputLine);
+                            resp_f = f_in.readLine();
+                            c_out.println(inputLine);
+                            resp_c = c_in.readLine();
+                            if(!resp_r.contains("not") && !resp_c.contains("not") && !resp_f.contains("not")){
+                                ret = resp_r;
+                                if(showPrints) out.println("Response: " + resp_r);
+                            }else{
+                                ret = "Failed to Delete Customer";
+                                out.println("Failed to Delete Customer");
+                            }
+                            break;
+                            
+                            case QueryFlight:
+                            f_out.println(inputLine);
+                            resp = f_in.readLine();
+                            ret = resp;
+                            if(showPrints) out.println("Response: " + resp);
+                            break;
+                            
+                            case QueryCars:
+                            c_out.println(inputLine);
+                            resp = c_in.readLine();
+                            ret = resp;
+                            if(showPrints) out.println("Response: " + resp);
+                            break;
+                            
+                            case QueryRooms:
+                            r_out.println(inputLine);
+                            resp = r_in.readLine();
+                            ret = resp;
+                            if(showPrints) out.println("Response: " + resp);
+                            break;
+                            
+                            case QueryCustomer:
+                            r_out.println(inputLine);
+                            resp_r = r_in.readLine();
+                            f_out.println(inputLine);
+                            resp_f = f_in.readLine();
+                            c_out.println(inputLine);
+                            resp_c = c_in.readLine();
+                            if(!resp_r.contains("not") && !resp_c.contains("not") && !resp_f.contains("not")){
+                                ret = "Bill for customer:aaa" + resp_r + "aaa" + resp_f + "aaa" + resp_c;
+                                if(showPrints) out.println("Response:aaaBill for customer:aaa" + resp_r + "aaa" + resp_f + "aaa" + resp_c);
+                            }else{
+                                ret = "Failed to Query Customer";
+                                out.println("Failed to Query Customer");
+                            }
+                            break;
+                            
+                            case QueryFlightPrice:
+                            f_out.println(inputLine);
+                            resp = f_in.readLine();
+                            ret = resp;
+                            if(showPrints) out.println("Response: " + resp);
+                            break;
+                            
+                            case QueryCarsPrice:
+                            c_out.println(inputLine);
+                            resp = c_in.readLine();
+                            ret = resp;
+                            if(showPrints) out.println("Response: " + resp);
+                            break;
+                            
+                            case QueryRoomsPrice:
+                            r_out.println(inputLine);
+                            resp = r_in.readLine();
+                            ret = resp;
+                            if(showPrints) out.println("Response: " + resp);
+                            break;
+                            
+                            case ReserveFlight:
+                            tm.newData(xID, "FLIGHT", getPreviousData(f_out, f_in, "FLIGHT", xID, arguments.elementAt(2)));
+                            tm.newData(xID, "CUSTOMER", getPreviousData(f_out, f_in, "CUSTOMER", xID, arguments.elementAt(2)));
+                            f_out.println(inputLine);
+                            resp = f_in.readLine();
+                            ret = resp;
+                            if(showPrints) out.println("Response: " + resp);
+                            break;
+                            
+                            case ReserveCar:
+                            tm.newData(xID, "CAR", getPreviousData(c_out, c_in, "CAR", xID, arguments.elementAt(2)));
+                            tm.newData(xID, "CUSTOMER", getPreviousData(c_out, c_in, "CUSTOMER", xID, arguments.elementAt(2)));
+                            c_out.println(inputLine);
+                            resp = c_in.readLine();
+                            ret = resp;
+                            if(showPrints) out.println("Response: " + resp);
+                            break;
+                            
+                            case ReserveRoom:
+                            tm.newData(xID, "ROOM", getPreviousData(c_out, c_in, "ROOM", xID, arguments.elementAt(2)));
+                            tm.newData(xID, "CUSTOMER", getPreviousData(c_out, c_in, "CUSTOMER", xID, arguments.elementAt(2)));
+                            r_out.println(inputLine);
+                            resp = r_in.readLine();
+                            ret = resp;
+                            if(showPrints) out.println("Response: " + resp);
+                            break;
+                            
+                            case Bundle:
+                            {
+                                int xid = toInt(arguments.elementAt(1));
+                                int customerID = toInt(arguments.elementAt(2));
+                                Vector<String> flightNumbers = new Vector<String>();
+                                for (int i = 0; i < arguments.size() - 6; ++i)
+                                {
+                                    flightNumbers.addElement(arguments.elementAt(3+i));
+                                }
+                                String location = arguments.elementAt(arguments.size()-3);
+                                boolean car = (new Boolean(arguments.elementAt(arguments.size()-2))).booleanValue();
+                                boolean room = (new Boolean(arguments.elementAt(arguments.size()-1))).booleanValue();
+                                // boolean ret = true;
+                                boolean csuccess = false, rsuccess = false, fsuccess = false;
+                                if(car){ //reserve a car at the given location
+                                    c_out.println("ReserveCar," + xid + "," + customerID + "," + location);
+                                    csuccess = !c_in.readLine().contains("not");
+                                }
+                                if(room){//reserve a room at the given location
+                                    r_out.println("ReserveRoom," + xid + "," + customerID + "," + location);
+                                    rsuccess = !r_in.readLine().contains("not");
+                                }
+                                for (String flightNum : flightNumbers) {
+                                    f_out.println("ReserveFlight," + xid + "," + customerID + "," + flightNum);
+                                    fsuccess = !f_in.readLine().contains("not");
+                                }
+                                if(!csuccess){
+                                    resp += "Reserving car failed.aaa";
+                                }else{
+                                    resp += "Reserving car succeeded.aaa";
+                                }
+                                if(!rsuccess){
+                                    resp += "Reserving room failed.aaa";
+                                }else{
+                                    resp += "Reserving room succeeded.aaa";
+                                }
+                                if(!fsuccess){
+                                    resp += flightNumbers.size() > 1 ? "Reserving flights failed.aaa"  : "Reserving flight failed.aaa";
+                                }else{
+                                    resp += flightNumbers.size() > 1 ? "Reserving flights succeeded.aaa"  : "Reserving flight succeeded.aaa";
+                                }
+                                ret = resp;
+                                out.println("Response: " + resp);
+                                break;
+                            }
+                            case RemoveReservation:{
+                                switch(arguments.elementAt(4).toLowerCase()){
+                                    case "flight":
+                                    f_out.println("RemoveReservation," + toInt(arguments.elementAt(1)) + "," + toInt(arguments.elementAt(2)) + "," + arguments.elementAt(3) + "," + arguments.elementAt(4));
+                                    resp = f_in.readLine();
+                                    ret = resp;
+                                    out.println("Response: " + resp);
+                                    break;
+                                    case "room":
+                                    r_out.println("RemoveReservation," + toInt(arguments.elementAt(1)) + "," + toInt(arguments.elementAt(2)) + "," + arguments.elementAt(3) + "," + arguments.elementAt(4));
+                                    resp = r_in.readLine();
+                                    ret = resp;
+                                    out.println("Response: " + resp);
+                                    break;
+                                    case "car":
+                                    c_out.println("RemoveReservation," + toInt(arguments.elementAt(1)) + "," + toInt(arguments.elementAt(2)) + "," + arguments.elementAt(3) + "," + arguments.elementAt(4));
+                                    resp = c_in.readLine();
+                                    ret = resp;
+                                    out.println("Response: " + resp);
+                                    break;
+                                }
+                                break;
+                            }
+                            default:
+                            {
+                                out.println("Command handling error. (Unhandled input)");
+                            }
                             return ret;
                         }
+                    }catch(Exception e){
+                        out.println("Command handling error.");
+                        e.printStackTrace();
                         return ret;
                     }
+                    return ret;
+                }
             }
             
             public static Vector<String> parse(String command)

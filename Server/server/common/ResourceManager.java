@@ -383,5 +383,36 @@ public class ResourceManager implements IResourceManager
 	{
 		return m_name;
 	}
+
+	public String getObjectData(int xid, String objType, String objKey){
+		String ret = "";
+		switch(objType.toLowerCase()){
+			case "flight":{
+				Flight curObj = (Flight)readData(xid, Flight.getKey(Integer.parseInt(objKey)));
+				return objKey + "," + curObj.getKey().split("-")[1] + "," + curObj.getCount() + "," + curObj.getPrice() + "," /*+ curObj.getReserved()*/;
+			}
+			case "room":{
+				Room curObj = (Room)readData(xid, Room.getKey(objKey));
+				return objKey + "," + curObj.getKey().split("-")[1] + "," + curObj.getCount() + "," + curObj.getLocation() + ","  + curObj.getPrice() + "," /*+ curObj.getReserved()*/;
+			}
+			case "car":{
+				Car curObj = (Car)readData(xid, Car.getKey(objKey));
+				return objKey + "," + curObj.getKey().split("-")[1] + "," + curObj.getCount() + "," + curObj.getLocation() + "," + curObj.getPrice() + ","/* + curObj.getReserved()*/;
+			}
+			case "customer":{
+				//Don't think customer data needed since only adding/deleting customers
+				Customer customer = (Customer)readData(xid, Customer.getKey(Integer.parseInt(objKey)));
+				return objKey + "," + customer.getID();
+			}
+		}
+		return ret;
+		
+	}
+
+	public String removeReservation(int xid, String customerId, String objectId, String rmType){
+		Customer customer = (Customer)readData(xid, Customer.getKey(Integer.parseInt(customerId)));
+		customer.removeReservedItem(objectId);
+		return "done";
+	}
 }
  

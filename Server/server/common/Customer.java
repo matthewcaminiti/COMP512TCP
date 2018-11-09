@@ -51,6 +51,14 @@ public class Customer extends RMItem
 		return (ReservedItem)m_reservations.get(key);
 	}
 
+	public void removeReservedItem(String key){
+		ReservedItem reservedItem = getReservedItem(key);
+		if(reservedItem == null){
+			reservedItem = new ReservedItem(key, "asd", 1, 1);
+		}
+		reservedItem.setPrice(0);
+		m_reservations.put(reservedItem.getKey(), reservedItem);
+	}
 	public String getBill()
 	{
 		//String s = "Bill for customer " + m_ID + "\n";

@@ -32,8 +32,11 @@ public enum Command {
 	Quit("Exit the client application", ""),
 
 	Start("Create a new transaction", ""),
-	Commit("Commit the transaction", "xid"),
-	Abort("Abort the transaction", "xid"),
+	Commit("Commit the transaction", "<xid>"),
+	Abort("Abort the transaction", "<xid>"),
+	Timeout("Client-side action timeout", ""),
+	GetData("Get data for atomicity", "<xid>,<objType>,<objKey>"),
+	RemoveReservation("Remove a customer's reservation from itself","<xid><CustomerID><FlightNumber><RMType>"),
 	Shutdown("Shutdown the whole operation", "");
 
 	String m_description;

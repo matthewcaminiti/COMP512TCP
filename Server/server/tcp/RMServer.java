@@ -459,6 +459,14 @@ public class RMServer
                     }
                     break;
                 }
+                case GetData:{
+                    out.println(m_resourceManager.getObjectData(Integer.parseInt(arguments.elementAt(1)), arguments.elementAt(2), arguments.elementAt(3)));
+                    break;
+                }
+                case RemoveReservation:{
+                    out.println(m_resourceManager.removeReservation(Integer.parseInt(arguments.elementAt(1)), arguments.elementAt(2), arguments.elementAt(3), arguments.elementAt(4)));
+                    break;
+                }
                 case Quit:
 				//checkArgumentsCount(1, arguments.size());
                 
