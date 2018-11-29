@@ -15,9 +15,15 @@ public class ResourceManager implements IResourceManager
 	protected String m_name = "";
 	protected RMHashMap m_data = new RMHashMap();
 
+	private int crashMode = 0;
+
 	public ResourceManager(String p_name)
 	{
 		m_name = p_name;
+	}
+
+	public void crashResourceManager(int mode) throws RemoteException{
+		this.crashMode = mode;
 	}
 
 	// Reads a data item

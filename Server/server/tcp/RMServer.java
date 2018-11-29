@@ -1,7 +1,6 @@
 package server.tcp;
 
 import server.common.*;
-
 import java.util.*;
 import java.io.*;
 import java.net.*;
@@ -11,6 +10,7 @@ public class RMServer
     private ServerSocket serverSocket;
     public ResourceManager rm;
     public String s_name;
+
     
     public static void main(String[] args) throws Exception
     {
@@ -19,7 +19,7 @@ public class RMServer
         server.setName(args[1]);
         server.start(Integer.parseInt(args[0]), args[1]);
     }
-    
+
     public void start(int port, String name) throws Exception
     {
         serverSocket = new ServerSocket(port);
@@ -205,6 +205,10 @@ public class RMServer
                         System.err.println((char)27 + "[31;1mCommand exception: " + (char)27 + "[0mImproper use of help command. Location \"help\" or \"help,<CommandName>\"");
                     }
                     break;
+                }
+                case Crash:{
+                    int mode = Integer.valueOf(arugments.elementAt(1).trim());
+                    m_resourceManager.crashResourceManager(mode);
                 }
                 case AddFlight: {
                     checkArgumentsCount(5, arguments.size());

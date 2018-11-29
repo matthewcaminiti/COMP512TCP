@@ -6,6 +6,7 @@ import server.common.*;
 import java.util.*;
 import java.io.*;
 import java.net.*;
+import java.rmi.RemoteException;
 
 public class MiddlewareServer
 {
@@ -615,28 +616,33 @@ public class MiddlewareServer
                                 }
                                 case CrashRM:
                                 {
-                                    if(arguments.elementAt(1).trim().equals("Flight")){
-                                        f_out.println("CrashRM,Flight");
-                                        resp = f_in.readLine();
-                                        out.println("Response: " + resp);
-                                        f_out = new PrintWriter(flightSocket.getOutputStream(), true);
-                                        f_in = new BufferedReader(new InputStreamReader(flightSocket.getInputStream()));
-                                    }else if(arguments.elementAt(1).trim().equals("Car")){
-                                        c_out.println("CrashRM,Car");
-                                        resp = c_in.readLine();
-                                        out.println("Response: " + resp);
-                                        c_out = new PrintWriter(carSocket.getOutputStream(), true);
-                                        c_in = new BufferedReader(new InputStreamReader(carSocket.getInputStream()));
-                                    }else if(arguments.elementAt(1).trim().equals("Room")){
-                                        r_out.println("CrashRM,Room");
-                                        resp = r_in.readLine();
-                                        out.println("Response: " + resp);
-                                        c_out = new PrintWriter(roomSocket.getOutputStream(), true);
-                                        c_in = new BufferedReader(new InputStreamReader(roomSocket.getInputStream()));
-                                    }else{
-                                        out.println("No RM specified? [" + arguments.elementAt(1).trim() + "]");
+                                    mode = Integer.valueOf(arguments.elementAt(2).trim());
+                                    try{
+                                        if(arguments.elementAt(1).trim().equals("Flight")){
+                                        
+                                        }else if(arguments.elementAt(1).trim().equals("Car")){
+                                            
+                                        }else if(arguments.elementAt(1).trim().equals("Room")){
+                                            
+                                        }else{
+                                            System.out.println("Incorrect RM specified [" + arguments.elementAt(1).trim() + "]");
+                                            System.out.println("RM name must be Flight | Car | Room");
+                                        }
+                                    }catch (RemoteException ex){
+                                        System.out.println("Crashing resource manager failed. Sad!");
                                     }
+                                
                                     break;
+                                }
+
+                                case CrashTM:
+                                {
+                                    mode = Integer.valueOf(arguments.elementAt(2).trim());
+                                    try{
+                                        tm.crashMiddleware(mode);
+                                    }catch (RemoteException ex){
+                                        System.out.println("Crashing transaction manager failed. Sad!");
+                                    }
                                 }
                                 default:
                                 {
