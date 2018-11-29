@@ -26,6 +26,10 @@ public class ResourceManager implements IResourceManager
 		this.crashMode = mode;
 	}
 
+	public void resetCrashes(){
+        this.crashMode = 0;
+    }
+
 	public int getCrashStatus(){
 		return crashMode;
 	}
