@@ -22,7 +22,7 @@ public class ResourceManager implements IResourceManager
 		m_name = p_name;
 	}
 
-	public void crashResourceManager(int mode) throws RemoteException{
+	public void crashResourceManager(int mode){
 		this.crashMode = mode;
 	}
 

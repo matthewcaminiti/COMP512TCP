@@ -149,10 +149,10 @@ public class MiddlewareServer
                                 System.out.println("Middleware about to crash with mode: 1");
                                 System.exit(1);
                             }
-                            f_out.println("Prepare," + to.getXId());
-                            c_out.println("Prepare," + to.getXId());
-                            r_out.println("Prepare," + to.getXId());
-                            tm.sentVote();
+                            f_out.println("Prepare," + twoPCState.split(",")[1]);
+                            c_out.println("Prepare," + twoPCState.split(",")[1]);
+                            r_out.println("Prepare," + twoPCState.split(",")[1]);
+                            tm.sentVote(Integer.parseInt(twoPCState.split(",")[1]));
                             if(tm.getCrashStatus() == 2){
                                 System.out.println("Middleware about to crash with mode: 2");
                                 System.exit(1);
@@ -163,7 +163,7 @@ public class MiddlewareServer
                             //cycle through each RM to get its response
                             if(twoPCState.contains("Flight")){
                                 String f_resp = f_in.readLine();
-                                tm.receivedVote("Flight");
+                                tm.receivedVote("Flight", Integer.parseInt(twoPCState.split(",")[1]));
                                 if(tm.getCrashStatus() == 3){
                                     System.out.println("Middleware about to crash with mode: 3");
                                     System.exit(1);
@@ -179,7 +179,7 @@ public class MiddlewareServer
                                 votes[2] = c_resp == "YES" ? 1 : 0;
                             }else if(twoPCState.contains("none")){
                                 //all votes received
-                                tm.receivedAllVotes(votes);
+                                tm.receivedAllVotes(votes, Integer.parseInt(twoPCState.split(",")[1]));
                                 if(tm.getCrashStatus() == 4){
                                     System.out.println("Middleware about to crash with mode: 4");
                                     System.exit(1);
@@ -188,7 +188,7 @@ public class MiddlewareServer
                             break;
                         }
                         case "receivedAllVotes":{
-                            tm.makeDecision(twoPCState.split(",")[1]);
+                            tm.makeDecision(twoPCState.split(",")[1], Integer.parseInt(twoPCState.split(",")[2]));
                             if(tm.getCrashStatus() == 5){
                                 System.out.println("Middleware about to crash with mode: 5");
                                 System.exit(1);
@@ -199,19 +199,19 @@ public class MiddlewareServer
                             //send decisions
                             Boolean decision = Boolean.parseBoolean(twoPCState.split(",")[1]);
                             if(decision){
-                                f_out.println("Commit,");
-                                tm.sentDecision("Flight", decision);
+                                f_out.println("Commit," + twoPCState.split(",")[1]);
+                                tm.sentDecision("Flight", decision, Integer.parseInt(twoPCState.split(",")[1]));
                                 if(tm.getCrashStatus() == 6){
                                     System.out.println("Middleware about to crash with mode: 6");
                                     System.exit(1);
                                 }
                             }
                             if(decision){
-                                r_out.println("Commit,");
+                                r_out.println("Commit," + twoPCState.split(",")[1]);
                                 tm.sentDecision("Room", decision, Integer.parseInt(twoPCState.split(",")[1]));
                             }
                             if(decision) {
-                                c_out.println("Commit,");
+                                c_out.println("Commit," + twoPCState.split(",")[1]);
                                 tm.sentDecision("Car", decision, Integer.parseInt(twoPCState.split(",")[1]));
                             }
                             if(tm.getCrashStatus() == 7){
