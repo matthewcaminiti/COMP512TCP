@@ -206,7 +206,7 @@ public class RMServer
                     }
                     break;
                 }
-                case Crash:{
+                case CrashRMServer:{
                     int mode = Integer.valueOf(arugments.elementAt(1).trim());
                     m_resourceManager.crashResourceManager(mode);
                 }

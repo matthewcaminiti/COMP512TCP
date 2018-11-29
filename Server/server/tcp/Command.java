@@ -38,6 +38,8 @@ public enum Command {
 	GetData("Get data for atomicity", "<xid>,<objType>,<objKey>"),
 	RemoveReservation("Remove a customer's reservation from itself","<xid><CustomerID><FlightNumber><RMType>"),
 	CrashRM("Force crash a specific RM","<RMName>"),
+	CrashRMServer("Force crash of a specific RM Server","<RMServer>"),
+	CrashTM("Force crash of the Middleware"),
 	Shutdown("Shutdown the whole operation", "");
 
 	String m_description;
