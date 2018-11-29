@@ -66,6 +66,9 @@ public class TransactionManager
         return new TransactionObject(transactionCounter);
     }
 
+    public int getCrashStatus(){
+        return crashMode;
+    }
 
     public void crashMiddleware(int mode) throws RemoteException{
         this.crashMode = mode;

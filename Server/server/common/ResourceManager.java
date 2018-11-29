@@ -26,6 +26,10 @@ public class ResourceManager implements IResourceManager
 		this.crashMode = mode;
 	}
 
+	public int getCrashStatus(){
+		return crashMode;
+	}
+
 	// Reads a data item
 	protected RMItem readData(int xid, String key)
 	{

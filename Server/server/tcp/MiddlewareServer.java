@@ -145,12 +145,18 @@ public class MiddlewareServer
                     switch(twoPCState.split(",")[0]){
                         case "beforeVote":{
                             //send vote request
-                            //CRASH 1 HERE
+                            if(tm.getCrashStatus() == 1){
+                                System.out.println("Middleware about to crash with mode: 1");
+                                System.exit(1);
+                            }
                             f_out.println("Prepare," + to.getXId());
                             c_out.println("Prepare," + to.getXId());
                             r_out.println("Prepare," + to.getXId());
                             tm.sentVote();
-                            //CRASH 2 HERE
+                            if(tm.getCrashStatus() == 2){
+                                System.out.println("Middleware about to crash with mode: 2");
+                                System.exit(1);
+                            }
                             break;
                         }
                         case "waitingFor":{
@@ -159,7 +165,10 @@ public class MiddlewareServer
                             if(twoPCState.contains("Flight")){
                                 String f_resp = f_in.readLine();
                                 tm.receivedVote("Flight");
-                                //CRASH 3 HERE
+                                if(tm.getCrashStatus() == 3){
+                                    System.out.println("Middleware about to crash with mode: 3");
+                                    System.exit(1);
+                                }
                                 votes[0] = f_resp == "YES" ? 1 : 0;
                             }else if(twoPCState.contains("Room")){
                                 String r_resp = r_in.readLine();
@@ -172,13 +181,19 @@ public class MiddlewareServer
                             }else if(twoPCState.contains("none")){
                                 //all votes received
                                 tm.receivedAllVotes(votes);
-                                //CRASH 4 HERE
+                                if(tm.getCrashStatus() == 4){
+                                    System.out.println("Middleware about to crash with mode: 4");
+                                    System.exit(1);
+                                }
                             }
                             break;
                         }
                         case "receivedAllVotes":{
                             tm.makeDecision(twoPCState.split(",")[1]);
-                            //CRASH 5 HERE
+                            if(tm.getCrashStatus() == 5){
+                                System.out.println("Middleware about to crash with mode: 5");
+                                System.exit(1);
+                            }
                             break;
                         }
                         case "madeDecision":{
@@ -187,7 +202,10 @@ public class MiddlewareServer
                             if(decision){
                                 f_out.println("Commit,");
                                 tm.sentDecision("Flight", decision);
-                                //CRASH 6 HERE
+                                if(tm.getCrashStatus() == 6){
+                                    System.out.println("Middleware about to crash with mode: 6");
+                                    System.exit(1);
+                                }
                             }
                             if(decision){
                                 r_out.println("Commit,");
@@ -197,7 +215,10 @@ public class MiddlewareServer
                                 c_out.println("Commit,");
                                 tm.sentDecision("Car", decision);
                             }
-                            //CRASH 7 HERE
+                            if(tm.getCrashStatus() == 7){
+                                System.out.println("Middleware about to crash with mode: 7");
+                                System.exit(1);
+                            }
                         }
                     }
                 }
