@@ -39,7 +39,8 @@ public enum Command {
 	RemoveReservation("Remove a customer's reservation from itself","<xid><CustomerID><FlightNumber><RMType>"),
 	CrashRM("Force crash a specific RM","<RMName>"),
 	CrashRMServer("Force crash of a specific RM Server","<RMServer>"),
-	CrashTM("Force crash of the Middleware"),
+	CrashTM("Force crash of the Middleware",""),
+	Prepare("Request a decision from the RMs", "<xid>"),
 	Shutdown("Shutdown the whole operation", "");
 
 	String m_description;

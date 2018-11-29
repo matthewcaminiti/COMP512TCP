@@ -10,7 +10,7 @@ public class RMServer
     private ServerSocket serverSocket;
     public ResourceManager rm;
     public String s_name;
-
+    
     
     public static void main(String[] args) throws Exception
     {
@@ -19,7 +19,7 @@ public class RMServer
         server.setName(args[1]);
         server.start(Integer.parseInt(args[0]), args[1]);
     }
-
+    
     public void start(int port, String name) throws Exception
     {
         serverSocket = new ServerSocket(port);
@@ -40,13 +40,17 @@ public class RMServer
         private BufferedReader in;
         private ResourceManager m_resourceManager;
         private String s_name;
+        private Boolean in2PC;
         
         private File committedTrans = null;
         private File stagedTrans = null;
-
+        private File twoPCLog = null;
+        
         BufferedWriter cfbw = null;
         BufferedWriter sfbw = null;
-
+        
+        private String tcpState = "";
+        
         public RMServerHandler(Socket socket, ResourceManager rm, String name)
         {
             this.clientSocket = socket;
@@ -54,6 +58,7 @@ public class RMServer
             this.s_name = name;
             this.committedTrans = new File("../committedTrans" + name + ".txt");
             this.stagedTrans = new File("../stagedTrans" + name + ".txt");
+            this.twoPCLog = new File("../twoPCLog" + name + ".txt");
         }
         
         public void run()
@@ -100,6 +105,7 @@ public class RMServer
                     //created new empty committedTrans.txt
                     System.out.println("Created new committedTrans" + s_name + ".txt");
                 }
+                
             }catch(Exception e){
                 
             }
@@ -133,6 +139,167 @@ public class RMServer
                 }catch(Exception e){
                     System.out.println("Error when accessing stagedTrans. : ");
                     e.printStackTrace();
+                }
+                try{
+                    twoPCLog.createNewFile();
+                    FileReader fr = new FileReader(twoPCLog);
+                    BufferedReader br = new BufferedReader(fr);
+                    
+                    String line = "";
+                    tcpState = "none";
+                    while((line = br.readLine()) != null){
+                        tcpState = line;
+                    }
+                    if(tcpState != "none"){
+                        in2PC = true;
+                    }
+                }catch (Exception e){
+                    //i/o error
+                }
+                
+                while(in2PC){
+                    switch(tcpState.split(",")[0]){
+                        case "receivedVoteReq":{
+
+                            if(m_resourceManager.getCrashStatus() == 1){
+                                System.out.println("Resource manager server (name: " + this.s_name + ") about to crash with mode: 1");
+                                System.out.println("    - After receiving vote request, but before sending answer...");
+                                System.exit(1);
+                            }
+
+                            FileReader fr = new FileReader(committedTrans);
+                            BufferedReader br = new BufferedReader(fr);
+                            
+                            String line = "";
+                            String lastLine = "";
+                            while((line = br.readLine()) != null){
+                                lastLine = line;
+                            }
+                            //line is now last operation executed
+                            br.close();
+                            
+                            String decision = "";
+                            if(lastLine.split(",")[0] == "Abort"){
+                                decision = "NO";
+                                //out.println("NO");
+                            }
+                            in2PC = true;
+                            decision = "YES";
+                            tcpState = "madeDecision," + tcpState.split(",")[1] + "," + decision;
+                            
+                            FileWriter tpcLog = new FileWriter(twoPCLog);
+                            BufferedWriter bw = new BufferedWriter(tpcLog);
+                            
+                            bw.write("madeDecision," + arguments.elementAt(1) + "," + decision);
+                            bw.close();
+                            
+                            //out.println("YES");
+                            break;
+                        }
+                        case "madeDecision":{
+                            
+                            if(m_resourceManager.getCrashStatus() == 2){
+                                System.out.println("Resource manager server (name: " + this.s_name + ") about to crash with mode: 2");
+                                System.out.println("    - After deciding which answer to send...");
+                                System.exit(1);
+                            }
+
+                            FileReader fr = new FileReader(twoPCLog);
+                            BufferedReader br = new BufferedReader(fr);
+                            
+                            String line = "";
+                            String lastLine = "";
+                            while((line = br.readLine()) != null){
+                                lastLine = line;
+                            }
+                            br.close();
+                            
+                            out.println(lastLine.split(",")[2]); //send decision to middleware
+                            
+                            FileWriter tpcLog = new FileWriter(twoPCLog, true);
+                            BufferedWriter bw = new BufferedWriter(tpcLog);
+                            
+                            bw.write("sentDecision," + lastLine.split(",")[1] + "," + lastLine.split(",")[2]);
+                            bw.close();
+                            
+                            break;
+                        }
+                        case "sentDecision":{
+
+                            if(m_resourceManager.getCrashStatus() == 3){
+                                System.out.println("Resource manager server (name: " + this.s_name + ") about to crash with mode: 3");
+                                System.out.println("    - After sending answer...");
+                                System.exit(1);
+                            }
+
+                            String masterDecision = in.readLine(); //WAITS TO RECEIVE ABORT OR COMMIT FROM MIDDLEWARE
+                            
+                            FileReader fr = new FileReader(twoPCLog);
+                            BufferedReader br = new BufferedReader(fr);
+                            
+                            String line = "";
+                            String lastLine = "";
+                            while((line = br.readLine()) != null){
+                                lastLine = line;
+                            }
+                            br.close();
+                            
+                            FileWriter tpcLog = new FileWriter(twoPCLog, true);
+                            BufferedWriter bw = new BufferedWriter(tpcLog);
+                            
+                            bw.write("receivedDecision," + lastLine.split(",")[1] + "," + masterDecision);
+                            bw.close();
+                            
+                            if(m_resourceManager.getCrashStatus() == 4){
+                                System.out.println("Resource manager server (name: " + this.s_name + ") about to crash with mode: 4");
+                                System.out.println("    - After receiving decision but before committing/aborting...");
+                                System.exit(1);
+                            }
+                            
+                            if(masterDecision.split(",")[0].equals("Commit")){
+                                //decision is to commit
+                                Vector<String> asd = new Vector<String>();
+                                asd.add("Commit");
+                                asd.add(lastLine.split(",")[1]);
+                                execute(Command.Commit, asd);
+                            }else {
+                                //decision is to abort
+                                Vector<String> asd = new Vector<String>();
+                                asd.add("Abort");
+                                asd.add(lastLine.split(",")[1]);
+                                execute(Command.Commit, asd);
+                            }
+                            
+                            break;
+                        }
+                        case "receivedDecision":{
+                            FileReader fr = new FileReader(twoPCLog);
+                            BufferedReader br = new BufferedReader(fr);
+                            
+                            String line = "";
+                            String lastLine = "";
+                            while((line = br.readLine()) != null){
+                                lastLine = line;
+                            }
+                            br.close();
+                            
+                            if(lastLine.split(",")[2].equals("Commit")){
+                                //decision is to commit
+                                Vector<String> asd = new Vector<String>();
+                                asd.add("Commit");
+                                asd.add(lastLine.split(",")[1]);
+                                execute(Command.Commit, asd);
+                            }else {
+                                //decision is to abort
+                                Vector<String> asd = new Vector<String>();
+                                asd.add("Abort");
+                                asd.add(lastLine.split(",")[1]);
+                                execute(Command.Commit, asd);
+                            }
+                            
+                            break;
+                        }
+                    }
                 }
                 
                 while((inputLine = in.readLine()) != null){ 
@@ -207,7 +374,7 @@ public class RMServer
                     break;
                 }
                 case CrashRMServer:{
-                    int mode = Integer.valueOf(arugments.elementAt(1).trim());
+                    int mode = Integer.valueOf(arguments.elementAt(1).trim());
                     m_resourceManager.crashResourceManager(mode);
                 }
                 case AddFlight: {
@@ -581,32 +748,25 @@ public class RMServer
                     break;
                 }
                 case Quit:{
-				//checkArgumentsCount(1, arguments.size());
-                if(sfbw != null) sfbw.close();
-                if(cfbw != null) cfbw.close();
-				System.out.println("Quitting client");
-                System.exit(0);
-                break;
-                }
-                case CrashRM:{
-                    out.println("Crashing!");
-                    System.out.println("Crashing!");
+                    //checkArgumentsCount(1, arguments.size());
                     if(sfbw != null) sfbw.close();
                     if(cfbw != null) cfbw.close();
+                    System.out.println("Quitting client");
                     System.exit(0);
                     break;
                 }
                 case Commit:{
+                    /*
                     FileWriter fw = new FileWriter(committedTrans, true);
                     cfbw = new BufferedWriter(fw);
-
+                    
                     FileReader fr = new FileReader(stagedTrans);
                     BufferedReader reader = new BufferedReader(fr);
-
+                    
                     File temp = new File("tempTrans" + arguments.elementAt(1));
                     FileWriter tempFw = new FileWriter(temp, true);
                     BufferedWriter tempWriter = new BufferedWriter(tempFw);
-
+                    
                     String line = "";
                     while((line = reader.readLine()) != null){
                         Vector<String> args = parse(line);
@@ -626,16 +786,17 @@ public class RMServer
                     }
                     cfbw.close();
                     out.println("Committed: " + arguments.elementAt(1));
+                    */
                     break;
                 }
                 case Abort:{
                     FileReader fr = new FileReader(stagedTrans);
                     BufferedReader reader = new BufferedReader(fr);
-
+                    
                     File temp = new File("tempTrans" + arguments.elementAt(1));
                     FileWriter tempFw = new FileWriter(temp, true);
                     BufferedWriter tempWriter = new BufferedWriter(tempFw);
-
+                    
                     String line = "";
                     while((line = reader.readLine()) != null){
                         Vector<String> args = parse(line);
@@ -647,12 +808,95 @@ public class RMServer
                         }
                     }
                     reader.close();
+                    tempWriter.write("Abort," + arguments.elementAt(1));
                     tempWriter.close();
                     stagedTrans.delete();
                     if(temp.renameTo(stagedTrans)){
                         //succesfully renamed tempFile
                     }
+                    
                     out.println("Aborted: " + arguments.elementAt(1));
+                    break;
+                }
+                case Prepare:{
+                    FileWriter tpcLog = new FileWriter(twoPCLog);
+                    BufferedWriter bw = new BufferedWriter(tpcLog);
+                    
+                    bw.write("receivedVoteReq," + arguments.elementAt(1));
+                    bw.close();
+                    in2PC = true;
+
+                    if(m_resourceManager.getCrashStatus() == 1){
+                        System.out.println("Resource manager server (name: " + this.s_name + ") about to crash with mode: 1");
+                        System.out.println("    - After receiving vote request, but before sending answer...");
+                        System.exit(1);
+                    }
+
+                    FileReader fr = new FileReader(committedTrans);
+                    BufferedReader br = new BufferedReader(fr);
+                    
+                    String line = "";
+                    String lastLine = "";
+                    while((line = br.readLine()) != null){
+                        lastLine = line;
+                    }
+                    //line is now last operation executed
+                    br.close();
+                    
+                    String decision = "";
+                    if(lastLine.split(",")[0] == "Abort"){
+                        decision = "NO";
+                        //out.println("NO");
+                    }
+                    decision = "YES";
+                    
+                    tpcLog = new FileWriter(twoPCLog);
+                    bw = new BufferedWriter(tpcLog);
+                    
+                    bw.write("madeDecision," + arguments.elementAt(1) + "," + decision);
+                    bw.close();
+                    
+                    if(m_resourceManager.getCrashStatus() == 2){
+                        System.out.println("Resource manager server (name: " + this.s_name + ") about to crash with mode: 2");
+                        System.out.println("    - After deciding which answer to send...");
+                        System.exit(1);
+                    }
+
+                    out.println(decision);
+
+                    tpcLog = new FileWriter(twoPCLog);
+                    bw = new BufferedWriter(tpcLog);
+                    
+                    bw.write("sentDecision," + arguments.elementAt(1) + "," + decision);
+                    bw.close();
+
+                    if(m_resourceManager.getCrashStatus() == 3){
+                        System.out.println("Resource manager server (name: " + this.s_name + ") about to crash with mode: 3");
+                        System.out.println("    - After sending answer...");
+                        System.exit(1);
+                    }
+
+                    String masterDecision = in.readLine(); //waits for commit/abort
+
+                    tpcLog = new FileWriter(twoPCLog);
+                    bw = new BufferedWriter(tpcLog);
+                    
+                    bw.write("receivedDecision," + arguments.elementAt(1) + "," + masterDecision.split(",")[0]);
+                    bw.close();
+                    
+                    if(m_resourceManager.getCrashStatus() == 4){
+                        System.out.println("Resource manager server (name: " + this.s_name + ") about to crash with mode: 4");
+                        System.out.println("    - After receiving decision but before committing/aborting...");
+                        System.exit(1);
+                    }
+                    
+                    Command cmdexec = masterDecision.split(",")[0].equals("Commit") ? Command.Commit : Command.Abort;
+                    Vector<String> asd = new Vector<String>();
+                    asd.add(arguments.elementAt(0));
+                    asd.add(arguments.elementAt(1));
+                    execute(cmdexec, asd);
+
+
                     break;
                 }
             }
