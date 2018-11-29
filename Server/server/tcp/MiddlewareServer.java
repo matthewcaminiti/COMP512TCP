@@ -124,7 +124,7 @@ public class MiddlewareServer
             }
             try{
                 //Upon crash recovery, need to check if Middleware was in 2PC
-                String twoPCState = tm.getMiddlewareState();
+                String twoPCState = tm.getMiddlewareState(to.getXId());
                 if(!twoPCState.equals("none")){
                     in2PC = true; //flag that middleware was in 2PC when it crashed
                 }
@@ -139,7 +139,7 @@ public class MiddlewareServer
                 boolean isStarted = false;
                 //Perform 2PC before taking any more client commands
                 while(in2PC){
-                    String twoPCState = tm.getMiddlewareState();
+                    String twoPCState = tm.getMiddlewareState(to.getXId());
                     switch(twoPCState.split(",")[0]){
                         case "beforeVote":{
                             //send vote request
@@ -370,7 +370,7 @@ public class MiddlewareServer
                                 {
                                     lm.UnlockAll(to.getXId());
                                     //tm.commit(to.getXId());
-                                    tm.twoPCCommit(to.getXId());
+                                    tm.begin2PC(to.getXId());
                                     //before sending vote
 
                                     isStarted = false;

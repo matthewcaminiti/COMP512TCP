@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.rmi.RemoteException;
 import java.util.*;
+import java.io.*;
 
 
 import javax.transaction.InvalidTransactionException;
@@ -205,26 +206,16 @@ public class TransactionManager
     
     //implement 2PC
     
-    public void twoPCCommit(){
+    public void begin2PC(int xid){
         try{
             twoPCLog = new File("../twoPCLog.txt");
-            if(!twoPCLog.createNewFile()){
-                System.out.println("Found twoPCLog.txt");
-                FileReader fr = new FileReader(twoPCLog);
-                BufferedReader fbr = new BufferedReader(fr);
-                String line;
-                String lastState = "none";
-                while((line = fbr.readLine()) != null){
-                    //line will contain states
-                    System.out.println(line);
-                    lastState = line;
-                }
-                fbr.close();
-                return lastState;
-            }else{
-                //created new empty committedTrans.txt
-                System.out.println("Created new twoPCLog.txt");
-            }
+            twoPCLog.createNewFile();
+            FileWriter fw = new FileWriter(twoPCLog, true);
+            BufferedWriter br = new BufferedWriter(fw);
+            
+            br.write("beforeVote," + xid);
+            br.newLine();
+            br.close();
         }catch (Exception e){
             //TODO: handle I/O errors
         }
@@ -234,21 +225,21 @@ public class TransactionManager
             twoPCLog = new File("../twoPCLog.txt");
             if(!twoPCLog.createNewFile()){
                 FileWriter fw = new FileWriter(twoPCLog, true);
-                BufferedWriter br = new BufferedWriter(fw);
+                BufferedWriter bw = new BufferedWriter(fw);
                 
-                br.write("beforeVote,0");
-                br.newLine();
-                br.close();
-                return lastState;
+                bw.write("beforeVote," + xid);
+                bw.newLine();
+                bw.close();
+                return "beforeVote," + xid;
             }else{
-                //created new empty committedTrans.txt
-                FileWriter fw = new FileWriter(twoPCLog, true);
-                BufferedWriter br = new BufferedWriter(fw);
-                
-                br.write("sentVote,0");
-                br.newLine();
-                br.close();
-                System.out.println("Created new twoPCLog.txt");
+                FileReader fr = new FileReader(twoPCLog);
+                BufferedReader br = new BufferedReader(fr);
+                String line = "";
+                String lastLine = "none";
+                while((line = br.readLine()) != null){
+                    if(line.split(",")[1].equals("" + xid)) lastLine = line;
+                }
+                return lastLine;
             }
         }catch (Exception e){
             //TODO: handle I/O errors
@@ -257,12 +248,17 @@ public class TransactionManager
     }
     
     public void sentVote(){
-        FileWriter fw = new FileWriter(twoPCLog, true);
-        BufferedWriter br = new BufferedWriter(fw);
+        try{
+            FileWriter fw = new FileWriter(twoPCLog, true);
+            BufferedWriter bw = new BufferedWriter(fw);
+            
+            bw.write("sentVote,0");
+            bw.newLine();
+            bw.close();
+        }catch (Exception e){
+            //TODO
+        }
         
-        br.write("sentVote,0");
-        br.newLine();
-        br.close();
         return;
     }
 }
