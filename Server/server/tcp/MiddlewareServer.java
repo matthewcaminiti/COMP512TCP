@@ -161,7 +161,6 @@ public class MiddlewareServer
                         }
                         case "waitingFor":{
                             //cycle through each RM to get its response
-                            
                             if(twoPCState.contains("Flight")){
                                 String f_resp = f_in.readLine();
                                 tm.receivedVote("Flight");
@@ -172,11 +171,11 @@ public class MiddlewareServer
                                 votes[0] = f_resp == "YES" ? 1 : 0;
                             }else if(twoPCState.contains("Room")){
                                 String r_resp = r_in.readLine();
-                                tm.receivedVote("Room");
+                                tm.receivedVote("Room", Integer.parseInt(twoPCState.split(",")[1]));
                                 votes[1] = r_resp == "YES" ? 1 : 0;
                             }else if(twoPCState.contains("Car")){
                                 String c_resp = c_in.readLine();
-                                tm.receivedVote("Car");
+                                tm.receivedVote("Car", Integer.parseInt(twoPCState.split(",")[1]));
                                 votes[2] = c_resp == "YES" ? 1 : 0;
                             }else if(twoPCState.contains("none")){
                                 //all votes received
@@ -209,11 +208,11 @@ public class MiddlewareServer
                             }
                             if(decision){
                                 r_out.println("Commit,");
-                                tm.sentDecision("Room", decision);
+                                tm.sentDecision("Room", decision, Integer.parseInt(twoPCState.split(",")[1]));
                             }
                             if(decision) {
                                 c_out.println("Commit,");
-                                tm.sentDecision("Car", decision);
+                                tm.sentDecision("Car", decision, Integer.parseInt(twoPCState.split(",")[1]));
                             }
                             if(tm.getCrashStatus() == 7){
                                 System.out.println("Middleware about to crash with mode: 7");
@@ -438,7 +437,7 @@ public class MiddlewareServer
                                 {
                                     lm.UnlockAll(to.getXId());
                                     //tm.commit(to.getXId());
-                                    tm.begin2PC();
+                                    tm.begin2PC(to.getXId());
                                     //before sending vote
                                     
                                     isStarted = false;
