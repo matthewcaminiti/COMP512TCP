@@ -237,7 +237,7 @@ public class TransactionManager
     public String getMiddlewareState(){
         try{
             twoPCLog = new File("../twoPCLog.txt");
-            if(!twoPCLog.createNewFile()){
+            if(twoPCLog.createNewFile()){
                 FileWriter fw = new FileWriter(twoPCLog, true);
                 BufferedWriter bw = new BufferedWriter(fw);
                 
@@ -246,6 +246,7 @@ public class TransactionManager
                 bw.close();
                 return "none";
             }else{
+                System.out.println("Found twoPCLog.txt when trying to get MW 2PC state.");
                 FileReader fr = new FileReader(twoPCLog);
                 BufferedReader br = new BufferedReader(fr);
                 String line = "";
