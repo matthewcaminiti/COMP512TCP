@@ -201,7 +201,7 @@ public class MiddlewareServer
                             if(decision){
                                 f_out.println("Commit," + twoPCState.split(",")[1]);
                                 tm.sentDecision("Flight", decision, Integer.parseInt(twoPCState.split(",")[1]));
-                                
+
                                 if(tm.getCrashStatus() == 6){
                                     System.out.println("Middleware server about to crash with mode: 6");
                                     System.exit(1);
@@ -684,23 +684,64 @@ public class MiddlewareServer
                                 {
                                     int mode = Integer.valueOf(arguments.elementAt(2).trim());
                                     String cmdString = "CrashRMServer, " + mode;
-                                    if(arguments.elementAt(1).trim().equals("Flight")){
+                                    String server_name = argments.elementAt(1).trim();
+                                    if(server_name.equals("Flight")){
                                         f_out.write(cmdString);
-                                    }else if(arguments.elementAt(1).trim().equals("Car")){
+                                    }else if(server_name.equals("Car")){
                                         c_out.write(cmdString);
-                                    }else if(arguments.elementAt(1).trim().equals("Room")){
+                                    }else if(server_name.equals("Room")){
                                         r_out.write(cmdString);
                                     }else{
                                         System.out.println("Incorrect RM specified [" + arguments.elementAt(1).trim() + "]");
                                         System.out.println("RM name must be Flight | Car | Room");
                                     }
-                                    
                                     break;
                                 }
                                 case CrashTM:
                                 {
                                     int mode = Integer.valueOf(arguments.elementAt(2).trim());
                                     tm.crashMiddleware(mode);
+                                    break;
+                                }
+                                case ResetCrash:
+                                {
+                                    String server_name = argments.elementAt(1).trim();
+                                    if(server_name.equals("Flight")){
+                                        f_out.write("ResetRMCrash");
+                                    }else if(server_name.equals("Car")){
+                                        c_out.write("ResetRMCrash");
+                                    }else if(server_name.equals("Room")){
+                                        r_out.write("ResetRMCrash");
+                                    }else if (server_name.equals("Middleware")){
+                                        tm.resetCrashes();
+                                    }else{
+                                        System.out.println("Incorrect server specified [" + server_name + "]");
+                                        System.out.println("Server name must be Flight | Car | Room | Middleware");
+                                    }
+                                    break;
+                                }
+                                case GetCrashStatus:
+                                {
+                                    String server_name = argments.elementAt(1).trim();
+                                    String resp = "";
+                                    if(server_name.equals("Flight")){
+                                        f_out.write("GetCrashStatus");
+                                        resp = f_in.readLine();
+                                    }else if(server_name.equals("Car")){
+                                        c_out.write("GetCrashStatus");
+                                        resp = c_in.readLine();
+                                    }else if(server_name.equals("Room")){
+                                        r_out.write("GetCrashStatus");
+                                        resp = r_in.readLine();
+                                    }else if (server_name.equals("Middleware")){
+                                        resp = "Crash status of middleware server: " + String.valueOf(tm.getCrashStatus());
+                                    }else{
+                                        resp = "Incorrect server specified [" + server_name + "]\n" + 
+                                                "Server name must be Flight | Car | Room | Middleware";
+                                    }
+
+                                    System.out.println(resp);
+                                    break;
                                 }
                                 default:
                                 {

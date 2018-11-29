@@ -376,6 +376,15 @@ public class RMServer
                 case CrashRMServer:{
                     int mode = Integer.valueOf(arguments.elementAt(1).trim());
                     m_resourceManager.crashResourceManager(mode);
+                    break;
+                }
+                case ResetRMCrash:{
+                    m_resourceManager.crashResourceManager(0);
+                    break;
+                }
+                case GetCrashStatus:{
+                    out.println("Crash status of RM server [ " + s_name + "] is: " + String.valueOf(m_resourceManager.getCrashStatus()));
+                    break;
                 }
                 case AddFlight: {
                     checkArgumentsCount(5, arguments.size());
