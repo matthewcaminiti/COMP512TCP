@@ -683,13 +683,14 @@ public class MiddlewareServer
                                 case CrashRM:
                                 {
                                     mode = Integer.valueOf(arguments.elementAt(2).trim());
+                                    cmdString = "CrashRMServer, " + mode;
                                     try{
                                         if(arguments.elementAt(1).trim().equals("Flight")){
-                                        
+                                            f_out.write(cmdString);
                                         }else if(arguments.elementAt(1).trim().equals("Car")){
-                                            
+                                            c_out.write(cmdString);
                                         }else if(arguments.elementAt(1).trim().equals("Room")){
-                                            
+                                            r_out.write(cmdString);
                                         }else{
                                             System.out.println("Incorrect RM specified [" + arguments.elementAt(1).trim() + "]");
                                             System.out.println("RM name must be Flight | Car | Room");
