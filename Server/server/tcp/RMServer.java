@@ -220,6 +220,7 @@ public class RMServer
                             BufferedWriter bw = new BufferedWriter(tpcLog);
                             
                             bw.write("sentDecision," + lastLine.split(",")[1] + "," + lastLine.split(",")[2]);
+                            tcpState = "sentDecision," + lastLine.split(",")[1] + "," + lastLine.split(",")[2];
                             bw.close();
                             
                             break;
@@ -248,6 +249,7 @@ public class RMServer
                             BufferedWriter bw = new BufferedWriter(tpcLog);
                             
                             bw.write("receivedDecision," + lastLine.split(",")[1] + "," + masterDecision);
+                            tcpState = "receivedDecision," + lastLine.split(",")[1] + "," + masterDecision;
                             bw.close();
                             
                             if(m_resourceManager.getCrashStatus() == 4){
@@ -296,6 +298,12 @@ public class RMServer
                                 asd.add(lastLine.split(",")[1]);
                                 execute(Command.Commit, asd);
                             }
+                            FileWriter tpcLog = new FileWriter(twoPCLog, true);
+                            BufferedWriter bw = new BufferedWriter(tpcLog);
+                            
+                            bw.write("none");
+                            tcpState = "none";
+                            bw.close();
                             
                             break;
                         }
