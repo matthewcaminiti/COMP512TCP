@@ -389,14 +389,17 @@ public class ResourceManager implements IResourceManager
 		switch(objType.toLowerCase()){
 			case "flight":{
 				Flight curObj = (Flight)readData(xid, Flight.getKey(Integer.parseInt(objKey)));
+				if(curObj == null) return objKey + "," + xid + ",0,0,0";
 				return objKey + "," + curObj.getKey().split("-")[1] + "," + curObj.getCount() + "," + curObj.getPrice() + "," /*+ curObj.getReserved()*/;
 			}
 			case "room":{
 				Room curObj = (Room)readData(xid, Room.getKey(objKey));
+				if(curObj == null) return objKey + "," + xid + ",0,0,0";
 				return objKey + "," + curObj.getKey().split("-")[1] + "," + curObj.getCount() + "," + curObj.getLocation() + ","  + curObj.getPrice() + "," /*+ curObj.getReserved()*/;
 			}
 			case "car":{
 				Car curObj = (Car)readData(xid, Car.getKey(objKey));
+				if(curObj == null) return objKey + "," + xid + ",0,0,0";
 				return objKey + "," + curObj.getKey().split("-")[1] + "," + curObj.getCount() + "," + curObj.getLocation() + "," + curObj.getPrice() + ","/* + curObj.getReserved()*/;
 			}
 			case "customer":{

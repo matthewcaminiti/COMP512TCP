@@ -32,6 +32,7 @@ public class MiddlewareServer
     public static TransactionManager tm;
     public static LockManager lm;
     
+    public static String twoPCState;
     public static void main(String[] args) throws Exception
     {
         //args[0] = flight ip
@@ -67,6 +68,7 @@ public class MiddlewareServer
         tm = new TransactionManager();
         lm = new LockManager();
         
+        
         while(true){
             new MiddlewareServerHandler(serverSocket.accept()).start();
         }
@@ -88,6 +90,8 @@ public class MiddlewareServer
         private TransactionObject to;
         //private ResourceManager m_resourceManager;
         
+        private boolean in2PC = false;
+        
         public MiddlewareServerHandler(Socket socket) throws Exception
         {
             this.clientSocket = socket;
@@ -95,11 +99,61 @@ public class MiddlewareServer
         public void run()
         {
             try{
+                File committedTrans = new File("../committedTrans.txt");
+                if(!committedTrans.createNewFile()){
+                    //if already exists committed transaction file
+                    System.out.println("Found committedTrans.txt");
+                    FileReader fr = new FileReader(committedTrans);
+                    //Committed Transaction file will contain each transaction in chronological order (of commits)
+                    // CT file will not have Transaction ID except for withing Commands
+                    BufferedReader fbr = new BufferedReader(fr);
+                    String line;
+                    int currXid = -1;
+                    while((line = fbr.readLine()) != null){
+                        //line will contain command
+                        //innerExecute(line, false, false);
+                        System.out.println(line);
+                    }
+                    
+                }else{
+                    //created new empty committedTrans.txt
+                    System.out.println("Created new committedTrans.txt");
+                }
+            }catch (Exception e){
+                //TODO: handle I/O errors
+            }
+            try{
+                //Upon crash recovery, need to check if Middleware was in 2PC
+                String twoPCState = tm.getMiddlewareState();
+                if(!twoPCState.equals("none")){
+                    in2PC = true; //flag that middleware was in 2PC when it crashed
+                }
+            }catch(Exception e){
+                //TODO: handle I/O errors
+            }
+            try{
                 out = new PrintWriter(clientSocket.getOutputStream(), true);
                 in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
                 Vector<String> arguments = new Vector<String>();
                 String inputLine;
                 boolean isStarted = false;
+                //Perform 2PC before taking any more client commands
+                while(in2PC){
+                    String twoPCState = tm.getMiddlewareState();
+                    switch(twoPCState.split(",")[0]){
+                        case "beforeVote":{
+                            //send vote request
+                            f_out.println("Prepare,0");
+                            c_out.println("Prepare,0");
+                            r_out.println("Prepare,0");
+                            tm.sentVote();
+                            break;
+                        }
+                        case "waitingFor":{
+
+                        }
+                    }
+                }
                 while((inputLine = in.readLine()) != null){
                     //CLIENT COMMAND HANDLING
                     arguments = parse(inputLine);
@@ -109,7 +163,7 @@ public class MiddlewareServer
                         String resp_c = "";
                         String resp_r = "";
                         Command cmd = Command.fromString((String)arguments.elementAt(0));
-                        if(isStarted && !cmd.equals(Command.Shutdown) && !cmd.equals(Command.Timeout)){
+                        if(isStarted && !cmd.equals(Command.Shutdown) && !cmd.equals(Command.Timeout) && !cmd.equals(Command.CrashRM)){
                             if(cmd.equals(Command.Commit) && arguments.size() == 1){
                                 out.println("Please enter XID to commit");
                                 continue;
@@ -119,8 +173,7 @@ public class MiddlewareServer
                                 out.println("xid does NOT exist!");
                                 continue;
                             }
-                        }
-                        if(!isStarted && !cmd.equals(Command.Start)){
+                        }else if(!isStarted && !cmd.equals(Command.Start) && !cmd.equals(Command.Shutdown) && !cmd.equals(Command.CrashRM)){
                             out.println("Need to start a transaction (Start)");
                             continue;
                         }
@@ -133,7 +186,7 @@ public class MiddlewareServer
                                 //NEED WRITE LOCK FOR FLIGHT
                                 lm.Lock(to.getXId(), "FLIGHT", TransactionLockObject.LockType.LOCK_WRITE);
                                 tm.newOperation(to.getXId(), "FLIGHT", inputLine);
-                                tm.newResponse(to.getXId(), innerExecute(inputLine, true));
+                                tm.newResponse(to.getXId(), innerExecute(inputLine, true, true));
                                 // out.println("Flight Added");
                                 break;
                                 
@@ -141,7 +194,7 @@ public class MiddlewareServer
                                 //NEED WRITE LOCK FOR CAR
                                 lm.Lock(to.getXId(), "CAR", TransactionLockObject.LockType.LOCK_WRITE);
                                 tm.newOperation(to.getXId(), "CAR", inputLine);
-                                tm.newResponse(to.getXId(), innerExecute(inputLine, true));
+                                tm.newResponse(to.getXId(), innerExecute(inputLine, true, true));
                                 // out.println("Cars Added");
                                 break;
                                 
@@ -149,7 +202,7 @@ public class MiddlewareServer
                                 //NEED WRITE LOCK FOR ROOM
                                 lm.Lock(to.getXId(), "ROOM", TransactionLockObject.LockType.LOCK_WRITE);
                                 tm.newOperation(to.getXId(), "ROOM", inputLine);
-                                tm.newResponse(to.getXId(), innerExecute(inputLine, true));
+                                tm.newResponse(to.getXId(), innerExecute(inputLine, true, true));
                                 // out.println("Rooms Added");
                                 break;
                                 
@@ -157,7 +210,7 @@ public class MiddlewareServer
                                 //NEED WRITE LOCK FOR CUSTOMER
                                 lm.Lock(to.getXId(), "CUSTOMER", TransactionLockObject.LockType.LOCK_WRITE);
                                 tm.newOperation(to.getXId(), "CUSTOMER", inputLine);
-                                tm.newResponse(to.getXId(), innerExecute(inputLine, true));
+                                tm.newResponse(to.getXId(), innerExecute(inputLine, true, true));
                                 // out.println("Customer Added");
                                 break;
                                 
@@ -165,7 +218,7 @@ public class MiddlewareServer
                                 //NEED WRITE LOCK FOR CUSTOMER
                                 lm.Lock(to.getXId(), "CUSTOMER", TransactionLockObject.LockType.LOCK_WRITE);
                                 tm.newOperation(to.getXId(), "CUSTOMER", inputLine);
-                                tm.newResponse(to.getXId(), innerExecute(inputLine, true));
+                                tm.newResponse(to.getXId(), innerExecute(inputLine, true, true));
                                 // out.println("Customer Added");
                                 break;
                                 
@@ -173,7 +226,7 @@ public class MiddlewareServer
                                 //NEED WRITE LOCK FOR FLIGHT
                                 lm.Lock(to.getXId(), "FLIGHT", TransactionLockObject.LockType.LOCK_WRITE);
                                 tm.newOperation(to.getXId(), "FLIGHT", inputLine);
-                                tm.newResponse(to.getXId(), innerExecute(inputLine, true));
+                                tm.newResponse(to.getXId(), innerExecute(inputLine, true, true));
                                 // out.println("Flight Deleted");
                                 break;
                                 
@@ -182,7 +235,7 @@ public class MiddlewareServer
                                 lm.Lock(to.getXId(), "CAR", TransactionLockObject.LockType.LOCK_WRITE);
                                 tm.newOperation(to.getXId(), "CAR", inputLine);
                                 // out.println("Flight Added");
-                                tm.newResponse(to.getXId(), innerExecute(inputLine, true));
+                                tm.newResponse(to.getXId(), innerExecute(inputLine, true, true));
                                 break;
                                 
                                 case DeleteRooms:
@@ -190,7 +243,7 @@ public class MiddlewareServer
                                 lm.Lock(to.getXId(), "ROOM", TransactionLockObject.LockType.LOCK_WRITE);
                                 tm.newOperation(to.getXId(), "ROOM", inputLine);
                                 // out.println("Flight Added");
-                                tm.newResponse(to.getXId(), innerExecute(inputLine, true));
+                                tm.newResponse(to.getXId(), innerExecute(inputLine, true, true));
                                 break;
                                 
                                 case DeleteCustomer:
@@ -198,7 +251,7 @@ public class MiddlewareServer
                                 lm.Lock(to.getXId(), "CUSTOMER", TransactionLockObject.LockType.LOCK_WRITE);
                                 tm.newOperation(to.getXId(), "CUSTOMER", inputLine);
                                 // out.println("Flight Added");
-                                tm.newResponse(to.getXId(), innerExecute(inputLine, true));
+                                tm.newResponse(to.getXId(), innerExecute(inputLine, true, true));
                                 break;
                                 
                                 case QueryFlight:
@@ -206,7 +259,7 @@ public class MiddlewareServer
                                 lm.Lock(to.getXId(), "FLIGHT", TransactionLockObject.LockType.LOCK_READ);
                                 tm.newOperation(to.getXId(), "FLIGHT", inputLine);
                                 // out.println("Flight Added");
-                                tm.newResponse(to.getXId(), innerExecute(inputLine, true));
+                                tm.newResponse(to.getXId(), innerExecute(inputLine, true, true));
                                 break;
                                 
                                 case QueryCars:
@@ -214,7 +267,7 @@ public class MiddlewareServer
                                 lm.Lock(to.getXId(), "CAR", TransactionLockObject.LockType.LOCK_READ);
                                 tm.newOperation(to.getXId(), "CAR", inputLine);
                                 // out.println("Flight Added");
-                                tm.newResponse(to.getXId(), innerExecute(inputLine, true));
+                                tm.newResponse(to.getXId(), innerExecute(inputLine, true, true));
                                 break;
                                 
                                 case QueryRooms:
@@ -222,7 +275,7 @@ public class MiddlewareServer
                                 lm.Lock(to.getXId(), "ROOM", TransactionLockObject.LockType.LOCK_READ);
                                 tm.newOperation(to.getXId(), "ROOM", inputLine);
                                 // out.println("Flight Added");
-                                tm.newResponse(to.getXId(), innerExecute(inputLine, true));
+                                tm.newResponse(to.getXId(), innerExecute(inputLine, true, true));
                                 break;
                                 
                                 case QueryCustomer:
@@ -230,7 +283,7 @@ public class MiddlewareServer
                                 lm.Lock(to.getXId(), "CUSTOMER", TransactionLockObject.LockType.LOCK_READ);
                                 tm.newOperation(to.getXId(), "CUSTOMER", inputLine);
                                 // out.println("Flight Added");
-                                tm.newResponse(to.getXId(), innerExecute(inputLine, true));
+                                tm.newResponse(to.getXId(), innerExecute(inputLine, true, true));
                                 break;
                                 
                                 case QueryFlightPrice:
@@ -238,7 +291,7 @@ public class MiddlewareServer
                                 lm.Lock(to.getXId(), "FLIGHT", TransactionLockObject.LockType.LOCK_READ);
                                 tm.newOperation(to.getXId(), "FLIGHT", inputLine);
                                 // out.println("Flight Added");
-                                tm.newResponse(to.getXId(), innerExecute(inputLine, true));
+                                tm.newResponse(to.getXId(), innerExecute(inputLine, true, true));
                                 break;
                                 
                                 case QueryCarsPrice:
@@ -246,7 +299,7 @@ public class MiddlewareServer
                                 lm.Lock(to.getXId(), "CAR", TransactionLockObject.LockType.LOCK_READ);
                                 tm.newOperation(to.getXId(), "CAR", inputLine);
                                 // out.println("Flight Added");
-                                tm.newResponse(to.getXId(), innerExecute(inputLine, true));
+                                tm.newResponse(to.getXId(), innerExecute(inputLine, true, true));
                                 break;
                                 
                                 case QueryRoomsPrice:
@@ -254,7 +307,7 @@ public class MiddlewareServer
                                 lm.Lock(to.getXId(), "ROOM", TransactionLockObject.LockType.LOCK_READ);
                                 tm.newOperation(to.getXId(), "ROOM", inputLine);
                                 // out.println("Flight Added");
-                                tm.newResponse(to.getXId(), innerExecute(inputLine, true));
+                                tm.newResponse(to.getXId(), innerExecute(inputLine, true, true));
                                 break;
                                 
                                 case ReserveFlight:
@@ -264,7 +317,7 @@ public class MiddlewareServer
                                 tm.newOperation(to.getXId(), "FLIGHT", inputLine);
                                 tm.newOperation(to.getXId(), "CUSTOMER", inputLine);
                                 // out.println("Flight Added");
-                                tm.newResponse(to.getXId(), innerExecute(inputLine, true));
+                                tm.newResponse(to.getXId(), innerExecute(inputLine, true, true));
                                 break;
                                 
                                 case ReserveCar:
@@ -274,7 +327,7 @@ public class MiddlewareServer
                                 tm.newOperation(to.getXId(), "CAR", inputLine);
                                 tm.newOperation(to.getXId(), "CUSTOMER", inputLine);
                                 // out.println("Flight Added");
-                                tm.newResponse(to.getXId(), innerExecute(inputLine, true));
+                                tm.newResponse(to.getXId(), innerExecute(inputLine, true, true));
                                 break;
                                 
                                 case ReserveRoom:
@@ -284,7 +337,7 @@ public class MiddlewareServer
                                 tm.newOperation(to.getXId(), "ROOM", inputLine);
                                 tm.newOperation(to.getXId(), "CUSTOMER", inputLine);
                                 // out.println("Flight Added");
-                                tm.newResponse(to.getXId(), innerExecute(inputLine, true));
+                                tm.newResponse(to.getXId(), innerExecute(inputLine, true, true));
                                 break;
                                 
                                 case Bundle:
@@ -299,7 +352,7 @@ public class MiddlewareServer
                                     tm.newOperation(to.getXId(), "CAR", inputLine);
                                     tm.newOperation(to.getXId(), "CUSTOMER", inputLine);
                                     // out.println("Flight Added");
-                                    tm.newResponse(to.getXId(), innerExecute(inputLine, true));
+                                    tm.newResponse(to.getXId(), innerExecute(inputLine, true, true));
                                     break;
                                 }
                                 case Quit:
@@ -316,8 +369,12 @@ public class MiddlewareServer
                                 case Commit:
                                 {
                                     lm.UnlockAll(to.getXId());
-                                    tm.commit(to.getXId());
+                                    //tm.commit(to.getXId());
+                                    tm.twoPCCommit(to.getXId());
+                                    //before sending vote
+
                                     isStarted = false;
+                                    //WHEN TELLING OTHER RM'S TO COMMIT:  innerExecute(inputLine, false, false);
                                     out.println("Commited transaction [" + to.getXId() + "]");
                                     break;
                                 }
@@ -341,60 +398,60 @@ public class MiddlewareServer
                                         Command usedCmd = Command.fromString((String)args.elementAt(0));
                                         switch(usedCmd){
                                             case AddFlight:{
-                                                innerExecute("DeleteFlight," +  to.getXId() + "," + args.elementAt(2), false);
+                                                innerExecute("DeleteFlight," +  to.getXId() + "," + args.elementAt(2), false, true);
                                                 System.out.println("Deleting Flight");
                                                 break;
                                             }
                                             case AddCars:{
-                                                innerExecute("DeleteCars," + to.getXId() + "," + args.elementAt(2), false);
+                                                innerExecute("DeleteCars," + to.getXId() + "," + args.elementAt(2), false, true);
                                                 System.out.println("Deleting Cars");
                                                 break;
                                             }
                                             case AddRooms:{
-                                                innerExecute("DeleteRooms," + to.getXId() + "," + args.elementAt(2), false);
+                                                innerExecute("DeleteRooms," + to.getXId() + "," + args.elementAt(2), false, true);
                                                 System.out.println("Deleting Rooms");
                                                 break;
                                             }
                                             case AddCustomer:{
-                                                innerExecute("DeleteCustomer," + to.getXId() + "," + customerDataHistory.removeLast(), false);
+                                                innerExecute("DeleteCustomer," + to.getXId() + "," + customerDataHistory.removeLast(), false, true);
                                                 break;
                                             }
                                             case AddCustomerID:{
-                                                innerExecute("DeleteCustomer," + to.getXId() + "," + args.elementAt(2), false);
+                                                innerExecute("DeleteCustomer," + to.getXId() + "," + args.elementAt(2), false, true);
                                                 break;
                                             }
                                             case DeleteFlight:{
                                                 String addFlight = flightDataHistory.removeLast();
                                                 String[] argumentz = addFlight.split(",");
-                                                innerExecute("AddFlight," + to.getXId() + "," + argumentz[1] + "," + argumentz[2] + "," + argumentz[3], false);
+                                                innerExecute("AddFlight," + to.getXId() + "," + argumentz[1] + "," + argumentz[2] + "," + argumentz[3], false, true);
                                                 break;
                                             }
                                             case DeleteCars:{
                                                 String addCars = carDataHistory.removeLast();
                                                 String[] argumentz = addCars.split(",");
-                                                innerExecute("AddCars," + to.getXId() + "," + argumentz[3] + "," + argumentz[2] + "," + argumentz[4], false);
+                                                innerExecute("AddCars," + to.getXId() + "," + argumentz[3] + "," + argumentz[2] + "," + argumentz[4], false, true);
                                                 break;
                                             }
                                             case DeleteRooms:{
                                                 String addRooms = roomDataHistory.removeLast();
                                                 String[] argumentz = addRooms.split(",");
-                                                innerExecute("AddRoomss," + to.getXId() + "," + argumentz[3] + "," + argumentz[2] + "," + argumentz[4], false);
+                                                innerExecute("AddRoomss," + to.getXId() + "," + argumentz[3] + "," + argumentz[2] + "," + argumentz[4], false, true);
                                                 break;
                                             }
                                             case DeleteCustomer:{
                                                 String addCustomer = customerDataHistory.removeLast();
                                                 String[] argumentz = addCustomer.split(",");
-                                                innerExecute("AddCustomerID," + to.getXId() + "," + argumentz[1], false);
+                                                innerExecute("AddCustomerID," + to.getXId() + "," + argumentz[1], false, true);
                                                 break;
                                             }
                                             case ReserveFlight:{
                                                 if(flightDataHistory.size() != 0){
                                                     String addFlight = flightDataHistory.removeLast();
                                                     String[] argumentz = addFlight.split(",");
-                                                    innerExecute("AddFlight," + to.getXId() + "," + argumentz[1] + ",1," + argumentz[3], false);
+                                                    innerExecute("AddFlight," + to.getXId() + "," + argumentz[1] + ",1," + argumentz[3], false, true);
                                                     String fixCustomer = customerDataHistory.removeLast();
                                                     String[] custArgs = fixCustomer.split(",");
-                                                    innerExecute("RemoveReservation," + to.getXId() + "," + custArgs[1] + "," + argumentz[1] + ",FLIGHT", false);
+                                                    innerExecute("RemoveReservation," + to.getXId() + "," + custArgs[1] + "," + argumentz[1] + ",FLIGHT", false, true);
                                                 }
                                                 break;
                                             }
@@ -403,10 +460,10 @@ public class MiddlewareServer
                                                 if(carDataHistory.size() != 0){
                                                     String addCar = carDataHistory.removeLast();
                                                     String[] argumentz = addCar.split(",");
-                                                    innerExecute("AddCars," + to.getXId() + "," + argumentz[1] + ",1," + argumentz[3], false);
+                                                    innerExecute("AddCars," + to.getXId() + "," + argumentz[1] + ",1," + argumentz[3], false, true);
                                                     String fixCustomer = customerDataHistory.removeLast();
                                                     String[] custArgs = fixCustomer.split(",");
-                                                    innerExecute("RemoveReservation," + to.getXId() + "," + custArgs[1] + "," + argumentz[1] + ",FLIGHT", false);
+                                                    innerExecute("RemoveReservation," + to.getXId() + "," + custArgs[1] + "," + argumentz[1] + ",FLIGHT", false, true);
                                                 }
                                                 break;
                                             }
@@ -415,10 +472,10 @@ public class MiddlewareServer
                                                 if(carDataHistory.size() != 0){
                                                     String addCar = carDataHistory.removeLast();
                                                     String[] argumentz = addCar.split(",");
-                                                    innerExecute("AddCars," + to.getXId() + "," + argumentz[1] + ",1," + argumentz[3], false);
+                                                    innerExecute("AddCars," + to.getXId() + "," + argumentz[1] + ",1," + argumentz[3], false, true);
                                                     String fixCustomer = customerDataHistory.removeLast();
                                                     String[] custArgs = fixCustomer.split(",");
-                                                    innerExecute("RemoveReservation," + to.getXId() + "," + custArgs[1] + "," + argumentz[1] + ",FLIGHT", false);
+                                                    innerExecute("RemoveReservation," + to.getXId() + "," + custArgs[1] + "," + argumentz[1] + ",FLIGHT", false, true);
                                                 }
                                                 break;
                                             }
@@ -432,6 +489,7 @@ public class MiddlewareServer
                                         }
                                     }
                                     lm.UnlockAll(to.getXId());
+                                    innerExecute(inputLine, false, false);
                                     break;
                                 }
                                 case Timeout:
@@ -454,60 +512,60 @@ public class MiddlewareServer
                                         Command usedCmd = Command.fromString((String)args.elementAt(0));
                                         switch(usedCmd){
                                             case AddFlight:{
-                                                innerExecute("DeleteFlight," +  to.getXId() + "," + args.elementAt(2), false);
+                                                innerExecute("DeleteFlight," +  to.getXId() + "," + args.elementAt(2), false, true);
                                                 System.out.println("Deleting Flight");
                                                 break;
                                             }
                                             case AddCars:{
-                                                innerExecute("DeleteCars," + to.getXId() + "," + args.elementAt(2), false);
+                                                innerExecute("DeleteCars," + to.getXId() + "," + args.elementAt(2), false, true);
                                                 System.out.println("Deleting Cars");
                                                 break;
                                             }
                                             case AddRooms:{
-                                                innerExecute("DeleteRooms," + to.getXId() + "," + args.elementAt(2), false);
+                                                innerExecute("DeleteRooms," + to.getXId() + "," + args.elementAt(2), false, true);
                                                 System.out.println("Deleting Rooms");
                                                 break;
                                             }
                                             case AddCustomer:{
-                                                innerExecute("DeleteCustomer," + to.getXId() + "," + customerDataHistory.removeLast(), false);
+                                                innerExecute("DeleteCustomer," + to.getXId() + "," + customerDataHistory.removeLast(), false, true);
                                                 break;
                                             }
                                             case AddCustomerID:{
-                                                innerExecute("DeleteCustomer," + to.getXId() + "," + args.elementAt(2), false);
+                                                innerExecute("DeleteCustomer," + to.getXId() + "," + args.elementAt(2), false, true);
                                                 break;
                                             }
                                             case DeleteFlight:{
                                                 String addFlight = flightDataHistory.removeLast();
                                                 String[] argumentz = addFlight.split(",");
-                                                innerExecute("AddFlight," + to.getXId() + "," + argumentz[1] + "," + argumentz[2] + "," + argumentz[3], false);
+                                                innerExecute("AddFlight," + to.getXId() + "," + argumentz[1] + "," + argumentz[2] + "," + argumentz[3], false, true);
                                                 break;
                                             }
                                             case DeleteCars:{
                                                 String addCars = carDataHistory.removeLast();
                                                 String[] argumentz = addCars.split(",");
-                                                innerExecute("AddCars," + to.getXId() + "," + argumentz[3] + "," + argumentz[2] + "," + argumentz[4], false);
+                                                innerExecute("AddCars," + to.getXId() + "," + argumentz[3] + "," + argumentz[2] + "," + argumentz[4], false, true);
                                                 break;
                                             }
                                             case DeleteRooms:{
                                                 String addRooms = roomDataHistory.removeLast();
                                                 String[] argumentz = addRooms.split(",");
-                                                innerExecute("AddRoomss," + to.getXId() + "," + argumentz[3] + "," + argumentz[2] + "," + argumentz[4], false);
+                                                innerExecute("AddRoomss," + to.getXId() + "," + argumentz[3] + "," + argumentz[2] + "," + argumentz[4], false, true);
                                                 break;
                                             }
                                             case DeleteCustomer:{
                                                 String addCustomer = customerDataHistory.removeLast();
                                                 String[] argumentz = addCustomer.split(",");
-                                                innerExecute("AddCustomerID," + to.getXId() + "," + argumentz[1], false);
+                                                innerExecute("AddCustomerID," + to.getXId() + "," + argumentz[1], false, true);
                                                 break;
                                             }
                                             case ReserveFlight:{
                                                 if(flightDataHistory.size() != 0){
                                                     String addFlight = flightDataHistory.removeLast();
                                                     String[] argumentz = addFlight.split(",");
-                                                    innerExecute("AddFlight," + to.getXId() + "," + argumentz[1] + ",1," + argumentz[3], false);
+                                                    innerExecute("AddFlight," + to.getXId() + "," + argumentz[1] + ",1," + argumentz[3], false, true);
                                                     String fixCustomer = customerDataHistory.removeLast();
                                                     String[] custArgs = fixCustomer.split(",");
-                                                    innerExecute("RemoveReservation," + to.getXId() + "," + custArgs[1] + "," + argumentz[1] + ",FLIGHT", false);
+                                                    innerExecute("RemoveReservation," + to.getXId() + "," + custArgs[1] + "," + argumentz[1] + ",FLIGHT", false, true);
                                                 }
                                                 break;
                                             }
@@ -516,10 +574,10 @@ public class MiddlewareServer
                                                 if(carDataHistory.size() != 0){
                                                     String addCar = carDataHistory.removeLast();
                                                     String[] argumentz = addCar.split(",");
-                                                    innerExecute("AddCars," + to.getXId() + "," + argumentz[1] + ",1," + argumentz[3], false);
+                                                    innerExecute("AddCars," + to.getXId() + "," + argumentz[1] + ",1," + argumentz[3], false, true);
                                                     String fixCustomer = customerDataHistory.removeLast();
                                                     String[] custArgs = fixCustomer.split(",");
-                                                    innerExecute("RemoveReservation," + to.getXId() + "," + custArgs[1] + "," + argumentz[1] + ",FLIGHT", false);
+                                                    innerExecute("RemoveReservation," + to.getXId() + "," + custArgs[1] + "," + argumentz[1] + ",FLIGHT", false, true);
                                                 }
                                                 break;
                                             }
@@ -528,10 +586,10 @@ public class MiddlewareServer
                                                 if(carDataHistory.size() != 0){
                                                     String addCar = carDataHistory.removeLast();
                                                     String[] argumentz = addCar.split(",");
-                                                    innerExecute("AddCars," + to.getXId() + "," + argumentz[1] + ",1," + argumentz[3], false);
+                                                    innerExecute("AddCars," + to.getXId() + "," + argumentz[1] + ",1," + argumentz[3], false, true);
                                                     String fixCustomer = customerDataHistory.removeLast();
                                                     String[] custArgs = fixCustomer.split(",");
-                                                    innerExecute("RemoveReservation," + to.getXId() + "," + custArgs[1] + "," + argumentz[1] + ",FLIGHT", false);
+                                                    innerExecute("RemoveReservation," + to.getXId() + "," + custArgs[1] + "," + argumentz[1] + ",FLIGHT", false, true);
                                                 }
                                                 break;
                                             }
@@ -555,9 +613,34 @@ public class MiddlewareServer
                                     System.exit(0);
                                     break;
                                 }
+                                case CrashRM:
+                                {
+                                    if(arguments.elementAt(1).trim().equals("Flight")){
+                                        f_out.println("CrashRM,Flight");
+                                        resp = f_in.readLine();
+                                        out.println("Response: " + resp);
+                                        f_out = new PrintWriter(flightSocket.getOutputStream(), true);
+                                        f_in = new BufferedReader(new InputStreamReader(flightSocket.getInputStream()));
+                                    }else if(arguments.elementAt(1).trim().equals("Car")){
+                                        c_out.println("CrashRM,Car");
+                                        resp = c_in.readLine();
+                                        out.println("Response: " + resp);
+                                        c_out = new PrintWriter(carSocket.getOutputStream(), true);
+                                        c_in = new BufferedReader(new InputStreamReader(carSocket.getInputStream()));
+                                    }else if(arguments.elementAt(1).trim().equals("Room")){
+                                        r_out.println("CrashRM,Room");
+                                        resp = r_in.readLine();
+                                        out.println("Response: " + resp);
+                                        c_out = new PrintWriter(roomSocket.getOutputStream(), true);
+                                        c_in = new BufferedReader(new InputStreamReader(roomSocket.getInputStream()));
+                                    }else{
+                                        out.println("No RM specified? [" + arguments.elementAt(1).trim() + "]");
+                                    }
+                                    break;
+                                }
                                 default:
                                 {
-                                    out.println("Command handling error. (Unhandled input)");
+                                    out.println("Command handling error. (Unhandled input, couldn't identify command)");
                                 }
                             }
                         }catch(Exception e){
@@ -584,7 +667,7 @@ public class MiddlewareServer
                 }
                 return ret;
             }
-            public String innerExecute(String inputLine, boolean showPrints){
+            public String innerExecute(String inputLine, boolean showPrints, boolean logInTM){
                 //CLIENT COMMAND HANDLING
                 Vector<String> arguments = parse(inputLine);
                 String ret = "";
@@ -601,7 +684,7 @@ public class MiddlewareServer
                             
                             // }
                             case AddFlight:
-                            tm.newData(xID, "FLIGHT", getPreviousData(f_out, f_in, "FLIGHT", xID, arguments.elementAt(2)));
+                            if(logInTM) tm.newData(xID, "FLIGHT", getPreviousData(f_out, f_in, "FLIGHT", xID, arguments.elementAt(2)));
                             f_out.println(inputLine);
                             resp = f_in.readLine();
                             ret = resp;
@@ -609,7 +692,7 @@ public class MiddlewareServer
                             break;
                             
                             case AddCars:
-                            tm.newData(xID, "CAR", getPreviousData(c_out, c_in, "CAR", xID, arguments.elementAt(2)));
+                            if(logInTM) tm.newData(xID, "CAR", getPreviousData(c_out, c_in, "CAR", xID, arguments.elementAt(2)));
                             c_out.println(inputLine);
                             resp = c_in.readLine();
                             ret = resp;
@@ -617,7 +700,7 @@ public class MiddlewareServer
                             break;
                             
                             case AddRooms:
-                            tm.newData(xID, "ROOM", getPreviousData(r_out, r_in, "ROOM", xID, arguments.elementAt(2)));
+                            if(logInTM) tm.newData(xID, "ROOM", getPreviousData(r_out, r_in, "ROOM", xID, arguments.elementAt(2)));
                             r_out.println(inputLine);
                             resp = r_in.readLine();
                             ret = resp;
@@ -627,7 +710,7 @@ public class MiddlewareServer
                             case AddCustomer:
                             int id = Integer.parseInt(arguments.elementAt(1));
                             int cid = Integer.parseInt(String.valueOf(id) + String.valueOf(Calendar.getInstance().get(Calendar.MILLISECOND)) + String.valueOf(Math.round(Math.random() * 100 + 1)));
-                            tm.newData(xID, "CUSTOMER", cid + "");
+                            if(logInTM) tm.newData(xID, "CUSTOMER", cid + "");
                             inputLine = "AddCustomerID," + id + "," + cid;
                             r_out.println(inputLine);
                             resp_r = r_in.readLine();
@@ -645,7 +728,7 @@ public class MiddlewareServer
                             break;
                             
                             case AddCustomerID:
-                            tm.newData(xID, "CUSTOMER", arguments.elementAt(2));
+                            if(logInTM) tm.newData(xID, "CUSTOMER", arguments.elementAt(2));
                             r_out.println(inputLine);
                             resp_r = r_in.readLine();
                             f_out.println(inputLine);
@@ -662,7 +745,7 @@ public class MiddlewareServer
                             break;
                             
                             case DeleteFlight:
-                            tm.newData(xID, "FLIGHT", getPreviousData(f_out, f_in, "FLIGHT", xID, arguments.elementAt(2)));
+                            if(logInTM) tm.newData(xID, "FLIGHT", getPreviousData(f_out, f_in, "FLIGHT", xID, arguments.elementAt(2)));
                             f_out.println(inputLine);
                             resp = f_in.readLine();
                             ret = resp;
@@ -670,7 +753,7 @@ public class MiddlewareServer
                             break;
                             
                             case DeleteCars:
-                            tm.newData(xID, "CAR", getPreviousData(c_out, c_in, "CAR", xID, arguments.elementAt(2)));
+                            if(logInTM) tm.newData(xID, "CAR", getPreviousData(c_out, c_in, "CAR", xID, arguments.elementAt(2)));
                             c_out.println(inputLine);
                             resp = c_in.readLine();
                             ret = resp;
@@ -678,7 +761,7 @@ public class MiddlewareServer
                             break;
                             
                             case DeleteRooms:
-                            tm.newData(xID, "ROOM", getPreviousData(r_out, r_in, "ROOM", xID, arguments.elementAt(2)));
+                            if(logInTM) tm.newData(xID, "ROOM", getPreviousData(r_out, r_in, "ROOM", xID, arguments.elementAt(2)));
                             r_out.println(inputLine);
                             resp = r_in.readLine();
                             ret = resp;
@@ -686,7 +769,7 @@ public class MiddlewareServer
                             break;
                             
                             case DeleteCustomer:
-                            tm.newData(xID, "CUSTOMER", getPreviousData(r_out, r_in, "CUSTOMER", xID, arguments.elementAt(2)));
+                            if(logInTM) tm.newData(xID, "CUSTOMER", getPreviousData(r_out, r_in, "CUSTOMER", xID, arguments.elementAt(2)));
                             r_out.println(inputLine);
                             resp_r = r_in.readLine();
                             f_out.println(inputLine);
@@ -761,8 +844,8 @@ public class MiddlewareServer
                             break;
                             
                             case ReserveFlight:
-                            tm.newData(xID, "FLIGHT", getPreviousData(f_out, f_in, "FLIGHT", xID, arguments.elementAt(2)));
-                            tm.newData(xID, "CUSTOMER", getPreviousData(f_out, f_in, "CUSTOMER", xID, arguments.elementAt(2)));
+                            if(logInTM) tm.newData(xID, "FLIGHT", getPreviousData(f_out, f_in, "FLIGHT", xID, arguments.elementAt(2)));
+                            if(logInTM) tm.newData(xID, "CUSTOMER", getPreviousData(f_out, f_in, "CUSTOMER", xID, arguments.elementAt(2)));
                             f_out.println(inputLine);
                             resp = f_in.readLine();
                             ret = resp;
@@ -770,8 +853,8 @@ public class MiddlewareServer
                             break;
                             
                             case ReserveCar:
-                            tm.newData(xID, "CAR", getPreviousData(c_out, c_in, "CAR", xID, arguments.elementAt(2)));
-                            tm.newData(xID, "CUSTOMER", getPreviousData(c_out, c_in, "CUSTOMER", xID, arguments.elementAt(2)));
+                            if(logInTM) tm.newData(xID, "CAR", getPreviousData(c_out, c_in, "CAR", xID, arguments.elementAt(2)));
+                            if(logInTM) tm.newData(xID, "CUSTOMER", getPreviousData(c_out, c_in, "CUSTOMER", xID, arguments.elementAt(2)));
                             c_out.println(inputLine);
                             resp = c_in.readLine();
                             ret = resp;
@@ -779,8 +862,8 @@ public class MiddlewareServer
                             break;
                             
                             case ReserveRoom:
-                            tm.newData(xID, "ROOM", getPreviousData(c_out, c_in, "ROOM", xID, arguments.elementAt(2)));
-                            tm.newData(xID, "CUSTOMER", getPreviousData(c_out, c_in, "CUSTOMER", xID, arguments.elementAt(2)));
+                            if(logInTM) tm.newData(xID, "ROOM", getPreviousData(c_out, c_in, "ROOM", xID, arguments.elementAt(2)));
+                            if(logInTM) tm.newData(xID, "CUSTOMER", getPreviousData(c_out, c_in, "CUSTOMER", xID, arguments.elementAt(2)));
                             r_out.println(inputLine);
                             resp = r_in.readLine();
                             ret = resp;
@@ -853,6 +936,26 @@ public class MiddlewareServer
                                     out.println("Response: " + resp);
                                     break;
                                 }
+                                break;
+                            }
+                            case Commit:{
+                                f_out.println(inputLine);
+                                String fresp = f_in.readLine();
+                                c_out.println(inputLine);
+                                String cresp = c_in.readLine();
+                                r_out.println(inputLine);
+                                String rresp = r_in.readLine();
+                                if(showPrints) out.println("Committed transaction ID: " + arguments.elementAt(1));
+                                break;
+                            }
+                            case Abort:{
+                                f_out.println(inputLine);
+                                String fresp = f_in.readLine();
+                                c_out.println(inputLine);
+                                String cresp = c_in.readLine();
+                                r_out.println(inputLine);
+                                String rresp = r_in.readLine();
+                                if(showPrints) out.println("Aborted transaction ID: " + arguments.elementAt(1));
                                 break;
                             }
                             default:

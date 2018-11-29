@@ -1,5 +1,7 @@
 package server.lockmanager;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.rmi.RemoteException;
 import java.util.*;
 
@@ -29,6 +31,12 @@ public class TransactionManager
     
     //keep track of which RM's are involved in a transaction
     private HashMap<Integer,LinkedList<String>> rmNeeded; //key-value, key being xid, values being linkedlist of needed RM's
+    
+    
+    private File twoPCLog = null;
+    
+    BufferedReader tpcbr = null;
+    BufferedWriter tpcbw = null;
     
     public TransactionManager(){
         transactionList = new LinkedList<TransactionObject>();
@@ -184,7 +192,7 @@ public class TransactionManager
         }
         return temp;
     }
-
+    
     public LinkedList<String> getDataHistory(int transactionId, String rm){
         rm = rm.toLowerCase();
         return dataHistory.get(transactionId).get(rm);
@@ -194,4 +202,67 @@ public class TransactionManager
         return operationHistory.get(transactionId).size();
     }
     //handle client disconnects by implementing time-to-live mechanism
+    
+    //implement 2PC
+    
+    public void twoPCCommit(){
+        try{
+            twoPCLog = new File("../twoPCLog.txt");
+            if(!twoPCLog.createNewFile()){
+                System.out.println("Found twoPCLog.txt");
+                FileReader fr = new FileReader(twoPCLog);
+                BufferedReader fbr = new BufferedReader(fr);
+                String line;
+                String lastState = "none";
+                while((line = fbr.readLine()) != null){
+                    //line will contain states
+                    System.out.println(line);
+                    lastState = line;
+                }
+                fbr.close();
+                return lastState;
+            }else{
+                //created new empty committedTrans.txt
+                System.out.println("Created new twoPCLog.txt");
+            }
+        }catch (Exception e){
+            //TODO: handle I/O errors
+        }
+    }
+    public String getMiddlewareState(int xid){
+        try{
+            twoPCLog = new File("../twoPCLog.txt");
+            if(!twoPCLog.createNewFile()){
+                FileWriter fw = new FileWriter(twoPCLog, true);
+                BufferedWriter br = new BufferedWriter(fw);
+                
+                br.write("beforeVote,0");
+                br.newLine();
+                br.close();
+                return lastState;
+            }else{
+                //created new empty committedTrans.txt
+                FileWriter fw = new FileWriter(twoPCLog, true);
+                BufferedWriter br = new BufferedWriter(fw);
+                
+                br.write("sentVote,0");
+                br.newLine();
+                br.close();
+                System.out.println("Created new twoPCLog.txt");
+            }
+        }catch (Exception e){
+            //TODO: handle I/O errors
+        }
+        return "none";
+    }
+    
+    public void sentVote(){
+        FileWriter fw = new FileWriter(twoPCLog, true);
+        BufferedWriter br = new BufferedWriter(fw);
+        
+        br.write("sentVote,0");
+        br.newLine();
+        br.close();
+        return;
+    }
 }

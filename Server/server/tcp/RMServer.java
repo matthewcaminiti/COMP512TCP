@@ -16,15 +16,15 @@ public class RMServer
     {
         RMServer server = new RMServer();
         server.rm = new ResourceManager(args[0]);
-        server.setName(args[0]);
-        server.start(Integer.parseInt(args[0]));
+        server.setName(args[1]);
+        server.start(Integer.parseInt(args[0]), args[1]);
     }
     
-    public void start(int port) throws Exception
+    public void start(int port, String name) throws Exception
     {
         serverSocket = new ServerSocket(port);
         while(true){
-            new RMServerHandler(serverSocket.accept(), rm).start();
+            new RMServerHandler(serverSocket.accept(), rm, name).start();
         }
     }
     
@@ -39,20 +39,102 @@ public class RMServer
         private PrintWriter out;
         private BufferedReader in;
         private ResourceManager m_resourceManager;
+        private String s_name;
         
-        public RMServerHandler(Socket socket, ResourceManager rm)
+        private File committedTrans = null;
+        private File stagedTrans = null;
+
+        BufferedWriter cfbw = null;
+        BufferedWriter sfbw = null;
+
+        public RMServerHandler(Socket socket, ResourceManager rm, String name)
         {
             this.clientSocket = socket;
             this.m_resourceManager = rm;
+            this.s_name = name;
+            this.committedTrans = new File("../committedTrans" + name + ".txt");
+            this.stagedTrans = new File("../stagedTrans" + name + ".txt");
         }
         
         public void run()
         {
             try{
+                //CHECK IF TRANSACTIONS HAVE BEEN COMMITTED
+                if(!committedTrans.createNewFile()){
+                    //if already exists committed transaction file
+                    System.out.println("Found committedTrans" + s_name + ".txt");
+                    FileReader fr = new FileReader(committedTrans);
+                    //Committed Transaction file will contain each transaction in chronological order (of commits)
+                    // CT file will not have Transaction ID except for within Commands
+                    // Should be able to safely re-execute each command
+                    BufferedReader fbr = new BufferedReader(fr);
+                    String line;
+                    int currXid = -1;
+                    Vector<String> arguments = new Vector<String>();
+                    PrintWriter old_out = out;
+                    out = new PrintWriter(System.out);
+                    while((line = fbr.readLine()) != null){
+                        //line will contain command
+                        //innerExecute(line, false, false);
+                        
+                        arguments = parse(line);
+                        try{
+                            Command cmd = Command.fromString((String)arguments.elementAt(0));
+                            try{
+                                execute(cmd, arguments);
+                            }catch (Exception e){
+                                System.out.println("Execute crapped out.");
+                                e.printStackTrace();
+                            }
+                            
+                        }catch (Exception e){
+                            System.out.println("Unknown command: " + line);
+                            e.printStackTrace();
+                        }
+                        
+                        System.out.println(line);
+                    }
+                    out = old_out;
+                    
+                }else{
+                    //created new empty committedTrans.txt
+                    System.out.println("Created new committedTrans" + s_name + ".txt");
+                }
+            }catch(Exception e){
+                
+            }
+            try{
                 out = new PrintWriter(clientSocket.getOutputStream(), true);
                 in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
                 Vector<String> arguments = new Vector<String>();
                 String inputLine;
+                
+                try{
+                    if(!stagedTrans.createNewFile()){
+                        //if already exists committed transaction file
+                        System.out.println("Found stagedTrans" + s_name + ".txt");
+                        FileWriter fw = new FileWriter(stagedTrans);
+                        FileReader fr = new FileReader(stagedTrans);
+                        BufferedReader test = new BufferedReader(fr);
+                        String line = "";
+                        while((line = test.readLine()) != null){
+                            System.out.println(line);
+                        }
+                        //Committed Transaction file will contain each transaction in chronological order (of commits)
+                        // CT file will not have Transaction ID except for within Commands
+                        // Should be able to safely re-execute each command
+                        sfbw = new BufferedWriter(fw);
+                    }else{
+                        //created new staged trans
+                        System.out.println("Created new stagedTrans" + s_name + ".txt");
+                        FileWriter fw = new FileWriter(stagedTrans);
+                        sfbw = new BufferedWriter(fw);
+                    }
+                }catch(Exception e){
+                    System.out.println("Error when accessing stagedTrans. : ");
+                    e.printStackTrace();
+                }
+                
                 while((inputLine = in.readLine()) != null){ 
                     //CLIENT COMMAND HANDLING
                     arguments = parse(inputLine);
@@ -60,6 +142,32 @@ public class RMServer
                         Command cmd = Command.fromString((String)arguments.elementAt(0));
                         try{
                             execute(cmd, arguments);
+                            if(!inputLine.contains("GetData") && !inputLine.contains("Quit") && !inputLine.contains("Query")){
+                                if(!stagedTrans.createNewFile()){
+                                    //if already exists committed transaction file
+                                    System.out.println("Found stagedTrans" + s_name + ".txt");
+                                    FileWriter fw = new FileWriter(stagedTrans, true);
+                                    FileReader fr = new FileReader(stagedTrans);
+                                    BufferedReader test = new BufferedReader(fr);
+                                    String line = "";
+                                    while((line = test.readLine()) != null){
+                                        System.out.println(line);
+                                    }
+                                    //Committed Transaction file will contain each transaction in chronological order (of commits)
+                                    // CT file will not have Transaction ID except for within Commands
+                                    // Should be able to safely re-execute each command
+                                    sfbw = new BufferedWriter(fw);
+                                }else{
+                                    //created new staged trans
+                                    System.out.println("Created new stagedTrans" + s_name + ".txt");
+                                    FileWriter fw = new FileWriter(stagedTrans, true);
+                                    sfbw = new BufferedWriter(fw);
+                                }
+                                sfbw.write(inputLine);
+                                sfbw.newLine();
+                                sfbw.close();
+                                System.out.println("Wrote to stagedTrans and closed");
+                            }
                         }catch (Exception e){
                             System.out.println("Execute crapped out.");
                             out.println("Execute crapped out.");
@@ -73,6 +181,7 @@ public class RMServer
                     }
                     //out.println("Success!");
                 }
+                sfbw.close();
                 in.close();
                 out.close();
                 clientSocket.close();
@@ -467,12 +576,81 @@ public class RMServer
                     out.println(m_resourceManager.removeReservation(Integer.parseInt(arguments.elementAt(1)), arguments.elementAt(2), arguments.elementAt(3), arguments.elementAt(4)));
                     break;
                 }
-                case Quit:
+                case Quit:{
 				//checkArgumentsCount(1, arguments.size());
-                
+                if(sfbw != null) sfbw.close();
+                if(cfbw != null) cfbw.close();
 				System.out.println("Quitting client");
                 System.exit(0);
                 break;
+                }
+                case CrashRM:{
+                    out.println("Crashing!");
+                    System.out.println("Crashing!");
+                    if(sfbw != null) sfbw.close();
+                    if(cfbw != null) cfbw.close();
+                    System.exit(0);
+                    break;
+                }
+                case Commit:{
+                    FileWriter fw = new FileWriter(committedTrans, true);
+                    cfbw = new BufferedWriter(fw);
+
+                    FileReader fr = new FileReader(stagedTrans);
+                    BufferedReader reader = new BufferedReader(fr);
+
+                    File temp = new File("tempTrans" + arguments.elementAt(1));
+                    FileWriter tempFw = new FileWriter(temp, true);
+                    BufferedWriter tempWriter = new BufferedWriter(tempFw);
+
+                    String line = "";
+                    while((line = reader.readLine()) != null){
+                        Vector<String> args = parse(line);
+                        if(args.elementAt(1).equals(arguments.elementAt(1))){ //if it is the XID of the Committed Transaction
+                            cfbw.write(line);
+                            cfbw.newLine();
+                        }else{
+                            tempWriter.write(line);
+                            tempWriter.newLine();
+                        }
+                    }
+                    reader.close();
+                    tempWriter.close();
+                    stagedTrans.delete();
+                    if(temp.renameTo(stagedTrans)){
+                        //succesfully renamed tempFile
+                    }
+                    cfbw.close();
+                    out.println("Committed: " + arguments.elementAt(1));
+                    break;
+                }
+                case Abort:{
+                    FileReader fr = new FileReader(stagedTrans);
+                    BufferedReader reader = new BufferedReader(fr);
+
+                    File temp = new File("tempTrans" + arguments.elementAt(1));
+                    FileWriter tempFw = new FileWriter(temp, true);
+                    BufferedWriter tempWriter = new BufferedWriter(tempFw);
+
+                    String line = "";
+                    while((line = reader.readLine()) != null){
+                        Vector<String> args = parse(line);
+                        if(args.elementAt(1).equals(arguments.elementAt(1))){ //if it is the XID of the Committed Transaction
+                            //ignore because we are 'erasing' the operations of this transaction
+                        }else{
+                            tempWriter.write(line);
+                            tempWriter.newLine();
+                        }
+                    }
+                    reader.close();
+                    tempWriter.close();
+                    stagedTrans.delete();
+                    if(temp.renameTo(stagedTrans)){
+                        //succesfully renamed tempFile
+                    }
+                    out.println("Aborted: " + arguments.elementAt(1));
+                    break;
+                }
             }
         }
         
@@ -508,11 +686,11 @@ public class RMServer
             return (new Boolean(string)).booleanValue();
         }
     }
-
+    
     public void setName(String name){
         s_name = name;
     }
-
+    
     public String getName(){
         return s_name;
     }

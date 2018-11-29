@@ -37,6 +37,7 @@ public enum Command {
 	Timeout("Client-side action timeout", ""),
 	GetData("Get data for atomicity", "<xid>,<objType>,<objKey>"),
 	RemoveReservation("Remove a customer's reservation from itself","<xid><CustomerID><FlightNumber><RMType>"),
+	CrashRM("Force crash a specific RM","<RMName>"),
 	Shutdown("Shutdown the whole operation", "");
 
 	String m_description;
