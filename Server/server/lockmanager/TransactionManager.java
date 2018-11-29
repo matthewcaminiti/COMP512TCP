@@ -66,17 +66,19 @@ public class TransactionManager
         return new TransactionObject(transactionCounter);
     }
 
+    public void crashMiddleware(int mode){
+        this.crashMode = mode;
+    }
+
+    public void resetCrashes(){
+        this.crashMode = 0;
+    }
+    
     public int getCrashStatus(){
         return crashMode;
     }
 
-    public void crashMiddleware(int mode) throws RemoteException{
-        this.crashMode = mode;
-    }
-    
     //implement 1-phase commit: tell the appropriate RM's that they should commit/abort the transaction
-    
-    
     public boolean commit(int transactionId) throws RemoteException, InvalidTransactionException
     {
         try{

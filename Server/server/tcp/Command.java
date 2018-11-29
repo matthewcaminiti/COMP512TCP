@@ -34,12 +34,17 @@ public enum Command {
 	Start("Create a new transaction", ""),
 	Commit("Commit the transaction", "<xid>"),
 	Abort("Abort the transaction", "<xid>"),
+
 	Timeout("Client-side action timeout", ""),
+
 	GetData("Get data for atomicity", "<xid>,<objType>,<objKey>"),
 	RemoveReservation("Remove a customer's reservation from itself","<xid><CustomerID><FlightNumber><RMType>"),
-	CrashRM("Force crash a specific RM","<RMName>"),
-	CrashRMServer("Force crash of a specific RM Server","<RMServer>"),
-	CrashTM("Force crash of the Middleware",""),
+	CrashRM("Force crash a specific RM","<RMName>,<mode>"),
+	CrashRMServer("Force crash of a specific RM Server [internal use - not a client command]","<mode>"),
+	CrashTM("Force crash of the Middleware","<mode>"),
+	ResetCrash("Reset crash status of server", "<ServerName>"),
+	GetCrashStatus("Get crash status of server", "<ServerName>"),
+	ResetRMCrash("Reset crash status of RM server [internal use - not a client command]"),
 	Prepare("Request a decision from the RMs", "<xid>"),
 	Shutdown("Shutdown the whole operation", "");
 
