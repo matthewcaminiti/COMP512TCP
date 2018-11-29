@@ -462,22 +462,29 @@ public class MiddlewareServer
                                         if(twoPCState.contains("Flight")){
                                             String f_resp = f_in.readLine();
                                             tm.receivedVote("Flight", Integer.parseInt(twoPCState.split(",")[1]));
+                                            System.out.println("Received Flight Vote");
                                             if(tm.getCrashStatus() == 3){
                                                 System.out.println("Middleware server about to crash with mode: 3");
                                                 System.exit(1);
                                             }
-                                            votes[0] = f_resp == "YES" ? 1 : 0;
-                                        }else if(twoPCState.contains("Room")){
+                                            votes[0] = f_resp.equals("YES") ? 1 : 0;
+                                        }
+                                        if(twoPCState.contains("Room")){
                                             String r_resp = r_in.readLine();
                                             tm.receivedVote("Room", Integer.parseInt(twoPCState.split(",")[1]));
-                                            votes[1] = r_resp == "YES" ? 1 : 0;
-                                        }else if(twoPCState.contains("Car")){
+                                            System.out.println("Received Room Vote");
+                                            votes[1] = r_resp.equals("YES") ? 1 : 0;
+                                        }
+                                        if(twoPCState.contains("Car")){
                                             String c_resp = c_in.readLine();
                                             tm.receivedVote("Car", Integer.parseInt(twoPCState.split(",")[1]));
-                                            votes[2] = c_resp == "YES" ? 1 : 0;
-                                        }else if(twoPCState.contains("none")){
+                                            System.out.println("Received Car Vote");
+                                            votes[2] = c_resp.equals("YES") ? 1 : 0;
+                                        }
+                                        if(twoPCState.contains("none")){
                                             //all votes received
                                             tm.receivedAllVotes(votes, Integer.parseInt(twoPCState.split(",")[1]));
+                                            System.out.println("Received All Votes");
                                             waitingForVotes = false;
                                             if(tm.getCrashStatus() == 4){
                                                 System.out.println("Middleware server about to crash with mode: 4");

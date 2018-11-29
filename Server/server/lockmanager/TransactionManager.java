@@ -292,13 +292,13 @@ public class TransactionManager
             while((line = br.readLine()) != null){
                 if(line.split(",")[0] == "waitingFor"){
                     if(line.split(",").length == 3){
-                        tempWriter.write("waitingFor," + xid + "none");
+                        tempWriter.write("waitingFor," + xid + ",none");
                         continue;
                     }
                     String fill = "waitingFor," + xid;
                     for(int i = 2 ; i < line.split(",").length; i++){
                         if(line.split(",")[i] != rmName){
-                            fill += line.split(",")[i] + ",";
+                            fill += "," + line.split(",")[i];
                         }
                     }
                     tempWriter.write(fill);
