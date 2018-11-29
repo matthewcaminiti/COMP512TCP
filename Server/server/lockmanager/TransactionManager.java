@@ -36,6 +36,8 @@ public class TransactionManager
     
     private File twoPCLog = null;
     
+    private int crashMode = 0;
+
     BufferedReader tpcbr = null;
     BufferedWriter tpcbw = null;
     
@@ -62,6 +64,14 @@ public class TransactionManager
         rmNeeded.put(transactionCounter, new LinkedList<String>());
         
         return new TransactionObject(transactionCounter);
+    }
+
+    public int getCrashStatus(){
+        return crashMode;
+    }
+
+    public void crashMiddleware(int mode) throws RemoteException{
+        this.crashMode = mode;
     }
     
     //implement 1-phase commit: tell the appropriate RM's that they should commit/abort the transaction

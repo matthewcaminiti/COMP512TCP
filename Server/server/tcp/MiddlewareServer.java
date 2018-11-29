@@ -6,6 +6,7 @@ import server.common.*;
 import java.util.*;
 import java.io.*;
 import java.net.*;
+import java.rmi.RemoteException;
 
 public class MiddlewareServer
 {
@@ -144,20 +145,29 @@ public class MiddlewareServer
                     switch(twoPCState.split(",")[0]){
                         case "beforeVote":{
                             //send vote request
-                            //CRASH 1 HERE
-                            f_out.println("Prepare," + twoPCState.split(",")[1]);
-                            c_out.println("Prepare," + twoPCState.split(",")[1]);
-                            r_out.println("Prepare," + twoPCState.split(",")[1]);
-                            tm.sentVote(Integer.parseInt(twoPCState.split(",")[1]));
-                            //CRASH 2 HERE
+                            if(tm.getCrashStatus() == 1){
+                                System.out.println("Middleware about to crash with mode: 1");
+                                System.exit(1);
+                            }
+                            f_out.println("Prepare," + to.getXId());
+                            c_out.println("Prepare," + to.getXId());
+                            r_out.println("Prepare," + to.getXId());
+                            tm.sentVote();
+                            if(tm.getCrashStatus() == 2){
+                                System.out.println("Middleware about to crash with mode: 2");
+                                System.exit(1);
+                            }
                             break;
                         }
                         case "waitingFor":{
                             //cycle through each RM to get its response
                             if(twoPCState.contains("Flight")){
                                 String f_resp = f_in.readLine();
-                                tm.receivedVote("Flight", Integer.parseInt(twoPCState.split(",")[1]));
-                                //CRASH 3 HERE
+                                tm.receivedVote("Flight");
+                                if(tm.getCrashStatus() == 3){
+                                    System.out.println("Middleware about to crash with mode: 3");
+                                    System.exit(1);
+                                }
                                 votes[0] = f_resp == "YES" ? 1 : 0;
                             }else if(twoPCState.contains("Room")){
                                 String r_resp = r_in.readLine();
@@ -169,14 +179,20 @@ public class MiddlewareServer
                                 votes[2] = c_resp == "YES" ? 1 : 0;
                             }else if(twoPCState.contains("none")){
                                 //all votes received
-                                tm.receivedAllVotes(votes, Integer.parseInt(twoPCState.split(",")[1]));
-                                //CRASH 4 HERE
+                                tm.receivedAllVotes(votes);
+                                if(tm.getCrashStatus() == 4){
+                                    System.out.println("Middleware about to crash with mode: 4");
+                                    System.exit(1);
+                                }
                             }
                             break;
                         }
                         case "receivedAllVotes":{
-                            tm.makeDecision(twoPCState.split(",")[2], Integer.parseInt(twoPCState.split(",")[1]));
-                            //CRASH 5 HERE
+                            tm.makeDecision(twoPCState.split(",")[1]);
+                            if(tm.getCrashStatus() == 5){
+                                System.out.println("Middleware about to crash with mode: 5");
+                                System.exit(1);
+                            }
                             break;
                         }
                         case "madeDecision":{
@@ -184,8 +200,11 @@ public class MiddlewareServer
                             Boolean decision = Boolean.parseBoolean(twoPCState.split(",")[1]);
                             if(decision){
                                 f_out.println("Commit,");
-                                tm.sentDecision("Flight", decision, Integer.parseInt(twoPCState.split(",")[1]));
-                                //CRASH 6 HERE
+                                tm.sentDecision("Flight", decision);
+                                if(tm.getCrashStatus() == 6){
+                                    System.out.println("Middleware about to crash with mode: 6");
+                                    System.exit(1);
+                                }
                             }
                             if(decision){
                                 r_out.println("Commit,");
@@ -195,7 +214,10 @@ public class MiddlewareServer
                                 c_out.println("Commit,");
                                 tm.sentDecision("Car", decision, Integer.parseInt(twoPCState.split(",")[1]));
                             }
-                            //CRASH 7 HERE
+                            if(tm.getCrashStatus() == 7){
+                                System.out.println("Middleware about to crash with mode: 7");
+                                System.exit(1);
+                            }
                         }
                     }
                 }
@@ -660,28 +682,33 @@ public class MiddlewareServer
                                 }
                                 case CrashRM:
                                 {
-                                    if(arguments.elementAt(1).trim().equals("Flight")){
-                                        f_out.println("CrashRM,Flight");
-                                        resp = f_in.readLine();
-                                        out.println("Response: " + resp);
-                                        f_out = new PrintWriter(flightSocket.getOutputStream(), true);
-                                        f_in = new BufferedReader(new InputStreamReader(flightSocket.getInputStream()));
-                                    }else if(arguments.elementAt(1).trim().equals("Car")){
-                                        c_out.println("CrashRM,Car");
-                                        resp = c_in.readLine();
-                                        out.println("Response: " + resp);
-                                        c_out = new PrintWriter(carSocket.getOutputStream(), true);
-                                        c_in = new BufferedReader(new InputStreamReader(carSocket.getInputStream()));
-                                    }else if(arguments.elementAt(1).trim().equals("Room")){
-                                        r_out.println("CrashRM,Room");
-                                        resp = r_in.readLine();
-                                        out.println("Response: " + resp);
-                                        c_out = new PrintWriter(roomSocket.getOutputStream(), true);
-                                        c_in = new BufferedReader(new InputStreamReader(roomSocket.getInputStream()));
-                                    }else{
-                                        out.println("No RM specified? [" + arguments.elementAt(1).trim() + "]");
+                                    mode = Integer.valueOf(arguments.elementAt(2).trim());
+                                    try{
+                                        if(arguments.elementAt(1).trim().equals("Flight")){
+                                        
+                                        }else if(arguments.elementAt(1).trim().equals("Car")){
+                                            
+                                        }else if(arguments.elementAt(1).trim().equals("Room")){
+                                            
+                                        }else{
+                                            System.out.println("Incorrect RM specified [" + arguments.elementAt(1).trim() + "]");
+                                            System.out.println("RM name must be Flight | Car | Room");
+                                        }
+                                    }catch (RemoteException ex){
+                                        System.out.println("Crashing resource manager failed. Sad!");
                                     }
+                                
                                     break;
+                                }
+
+                                case CrashTM:
+                                {
+                                    mode = Integer.valueOf(arguments.elementAt(2).trim());
+                                    try{
+                                        tm.crashMiddleware(mode);
+                                    }catch (RemoteException ex){
+                                        System.out.println("Crashing transaction manager failed. Sad!");
+                                    }
                                 }
                                 default:
                                 {
