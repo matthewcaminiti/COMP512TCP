@@ -59,6 +59,7 @@ public class RMServer
             this.committedTrans = new File("../committedTrans" + name + ".txt");
             this.stagedTrans = new File("../stagedTrans" + name + ".txt");
             this.twoPCLog = new File("../twoPCLog" + name + ".txt");
+            this.in2PC = false;
         }
         
         public void run()
@@ -160,7 +161,6 @@ public class RMServer
                 while(in2PC){
                     switch(tcpState.split(",")[0]){
                         case "receivedVoteReq":{
-
                             if(m_resourceManager.getCrashStatus() == 1){
                                 System.out.println("Resource manager server (name: " + this.s_name + ") about to crash with mode: 1");
                                 System.out.println("    - After receiving vote request, but before sending answer...");
@@ -773,7 +773,6 @@ public class RMServer
                     break;
                 }
                 case Commit:{
-                    /*
                     FileWriter fw = new FileWriter(committedTrans, true);
                     cfbw = new BufferedWriter(fw);
                     
@@ -803,7 +802,6 @@ public class RMServer
                     }
                     cfbw.close();
                     out.println("Committed: " + arguments.elementAt(1));
-                    */
                     break;
                 }
                 case Abort:{
@@ -873,6 +871,8 @@ public class RMServer
                     bw.write("madeDecision," + arguments.elementAt(1) + "," + decision);
                     bw.close();
                     
+                    System.out.println("made decision: " + decision);
+                    
                     if(m_resourceManager.getCrashStatus() == 2){
                         System.out.println("Resource manager server (name: " + this.s_name + ") about to crash with mode: 2");
                         System.out.println("    - After deciding which answer to send...");
@@ -886,6 +886,8 @@ public class RMServer
                     
                     bw.write("sentDecision," + arguments.elementAt(1) + "," + decision);
                     bw.close();
+
+                    System.out.println("sentDecision to MW: " + decision);
 
                     if(m_resourceManager.getCrashStatus() == 3){
                         System.out.println("Resource manager server (name: " + this.s_name + ") about to crash with mode: 3");
