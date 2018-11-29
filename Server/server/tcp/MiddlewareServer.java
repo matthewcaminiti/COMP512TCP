@@ -145,38 +145,37 @@ public class MiddlewareServer
                         case "beforeVote":{
                             //send vote request
                             //CRASH 1 HERE
-                            f_out.println("Prepare," + to.getXId());
-                            c_out.println("Prepare," + to.getXId());
-                            r_out.println("Prepare," + to.getXId());
-                            tm.sentVote();
+                            f_out.println("Prepare," + twoPCState.split(",")[1]);
+                            c_out.println("Prepare," + twoPCState.split(",")[1]);
+                            r_out.println("Prepare," + twoPCState.split(",")[1]);
+                            tm.sentVote(Integer.parseInt(twoPCState.split(",")[1]));
                             //CRASH 2 HERE
                             break;
                         }
                         case "waitingFor":{
                             //cycle through each RM to get its response
-                            
                             if(twoPCState.contains("Flight")){
                                 String f_resp = f_in.readLine();
-                                tm.receivedVote("Flight");
+                                tm.receivedVote("Flight", Integer.parseInt(twoPCState.split(",")[1]));
                                 //CRASH 3 HERE
                                 votes[0] = f_resp == "YES" ? 1 : 0;
                             }else if(twoPCState.contains("Room")){
                                 String r_resp = r_in.readLine();
-                                tm.receivedVote("Room");
+                                tm.receivedVote("Room", Integer.parseInt(twoPCState.split(",")[1]));
                                 votes[1] = r_resp == "YES" ? 1 : 0;
                             }else if(twoPCState.contains("Car")){
                                 String c_resp = c_in.readLine();
-                                tm.receivedVote("Car");
+                                tm.receivedVote("Car", Integer.parseInt(twoPCState.split(",")[1]));
                                 votes[2] = c_resp == "YES" ? 1 : 0;
                             }else if(twoPCState.contains("none")){
                                 //all votes received
-                                tm.receivedAllVotes(votes);
+                                tm.receivedAllVotes(votes, Integer.parseInt(twoPCState.split(",")[1]));
                                 //CRASH 4 HERE
                             }
                             break;
                         }
                         case "receivedAllVotes":{
-                            tm.makeDecision(twoPCState.split(",")[1]);
+                            tm.makeDecision(twoPCState.split(",")[2], Integer.parseInt(twoPCState.split(",")[1]));
                             //CRASH 5 HERE
                             break;
                         }
@@ -185,16 +184,16 @@ public class MiddlewareServer
                             Boolean decision = Boolean.parseBoolean(twoPCState.split(",")[1]);
                             if(decision){
                                 f_out.println("Commit,");
-                                tm.sentDecision("Flight", decision);
+                                tm.sentDecision("Flight", decision, Integer.parseInt(twoPCState.split(",")[1]));
                                 //CRASH 6 HERE
                             }
                             if(decision){
                                 r_out.println("Commit,");
-                                tm.sentDecision("Room", decision);
+                                tm.sentDecision("Room", decision, Integer.parseInt(twoPCState.split(",")[1]));
                             }
                             if(decision) {
                                 c_out.println("Commit,");
-                                tm.sentDecision("Car", decision);
+                                tm.sentDecision("Car", decision, Integer.parseInt(twoPCState.split(",")[1]));
                             }
                             //CRASH 7 HERE
                         }
@@ -416,7 +415,7 @@ public class MiddlewareServer
                                 {
                                     lm.UnlockAll(to.getXId());
                                     //tm.commit(to.getXId());
-                                    tm.begin2PC();
+                                    tm.begin2PC(to.getXId());
                                     //before sending vote
                                     
                                     isStarted = false;
