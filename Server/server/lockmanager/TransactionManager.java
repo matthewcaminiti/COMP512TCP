@@ -41,6 +41,8 @@ public class TransactionManager
     BufferedReader tpcbr = null;
     BufferedWriter tpcbw = null;
     
+    int[] votes = new int[3];
+    
     public TransactionManager(){
         transactionList = new LinkedList<TransactionObject>();
         transactionCounter = 0;
@@ -213,38 +215,38 @@ public class TransactionManager
     
     //implement 2PC
     
-    public void begin2PC(int xid){
+    public void begin2PC(){
         try{
             twoPCLog = new File("../twoPCLog.txt");
             twoPCLog.createNewFile();
             FileWriter fw = new FileWriter(twoPCLog, true);
             BufferedWriter br = new BufferedWriter(fw);
             
-            br.write("beforeVote," + xid);
+            br.write("beforeVote,0");
             br.newLine();
             br.close();
         }catch (Exception e){
             //TODO: handle I/O errors
         }
     }
-    public String getMiddlewareState(int xid){
+    public String getMiddlewareState(){
         try{
             twoPCLog = new File("../twoPCLog.txt");
             if(!twoPCLog.createNewFile()){
                 FileWriter fw = new FileWriter(twoPCLog, true);
                 BufferedWriter bw = new BufferedWriter(fw);
                 
-                bw.write("beforeVote," + xid);
+                bw.write("none");
                 bw.newLine();
                 bw.close();
-                return "beforeVote," + xid;
+                return "none";
             }else{
                 FileReader fr = new FileReader(twoPCLog);
                 BufferedReader br = new BufferedReader(fr);
                 String line = "";
                 String lastLine = "none";
                 while((line = br.readLine()) != null){
-                    if(line.split(",")[1].equals("" + xid)) lastLine = line;
+                    /*if(line.split(",")[1].equals("" + xid))*/ lastLine = line;
                 }
                 return lastLine;
             }
@@ -259,7 +261,7 @@ public class TransactionManager
             FileWriter fw = new FileWriter(twoPCLog, true);
             BufferedWriter bw = new BufferedWriter(fw);
             
-            bw.write("sentVote,0");
+            bw.write("waitingFor,Flight,Car,Room");
             bw.newLine();
             bw.close();
         }catch (Exception e){
@@ -267,5 +269,101 @@ public class TransactionManager
         }
         
         return;
+    }
+    
+    public void receivedVote(String rmName){
+        try{
+            twoPCLog = new File("../twoPCLog.txt");
+            FileReader fr = new FileReader(twoPCLog);
+            BufferedReader br = new BufferedReader(fr);
+            String line = "";
+            
+            File temp = new File("tempPCLog");
+            FileWriter tempFw = new FileWriter(temp, true);
+            BufferedWriter tempWriter = new BufferedWriter(tempFw);
+            
+            while((line = br.readLine()) != null){
+                if(line.split(",")[0] == "waitingFor"){
+                    if(line.split(",").length == 2){
+                        tempWriter.write("waitingFor,none");
+                        continue;
+                    }
+                    String fill = "waitingFor,";
+                    for(int i = 2 ; i < line.split(",").length; i++){
+                        if(line.split(",")[i] != rmName){
+                            fill += line.split(",")[i] + ",";
+                        }
+                    }
+                    tempWriter.write(fill);
+                    tempWriter.newLine();
+                }else{
+                    tempWriter.write(line);
+                    tempWriter.newLine();
+                }
+            }
+            tempWriter.close();
+            br.close();
+            
+            twoPCLog.delete();
+            if(temp.renameTo(twoPCLog)){
+                //succesfully renamed tempFile
+            }
+        }catch (Exception e){
+            //TODO
+        }
+        
+        return;
+    }
+    
+    public void receivedAllVotes(int[] votes){
+        try{
+            twoPCLog = new File("../twoPCLog.txt");
+            FileWriter fw = new FileWriter(twoPCLog, true);
+            BufferedWriter bw = new BufferedWriter(fw);
+            
+            boolean voteYes = true;
+            for(int i = 0; i < 3; i++){
+                if(votes[i] == 0){
+                    voteYes = false;
+                }
+            }
+            bw.write("receivedAllVotes," + voteYes);
+            bw.newLine();
+            bw.close();
+        }catch(Exception e){
+            //TODO: i/o exception handling
+        }
+        return;
+    }
+    
+    public boolean makeDecision(String voteBool){
+        try{
+            twoPCLog = new File("../twoPCLog.txt");
+            FileWriter fw = new FileWriter(twoPCLog, true);
+            BufferedWriter bw = new BufferedWriter(fw);
+            
+            bw.write("madeDecision," + voteBool);
+            bw.newLine();
+            bw.close();
+        }catch(Exception e){
+
+        }
+        return Boolean.parseBoolean(voteBool);
+    }
+
+    public boolean sentDecision(String rm, Boolean decision){
+        try{
+            twoPCLog = new File("../twoPCLog.txt");
+            FileWriter fw = new FileWriter(twoPCLog, true);
+            BufferedWriter bw = new BufferedWriter(fw);
+            
+            bw.write("madeDecision," + decision);
+            bw.newLine();
+            bw.close();
+        }catch(Exception e){
+
+        }
+        return decision;
+
     }
 }

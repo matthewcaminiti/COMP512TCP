@@ -92,6 +92,7 @@ public class MiddlewareServer
         //private ResourceManager m_resourceManager;
         
         private boolean in2PC = false;
+        private int[] votes = new int[3];
         
         public MiddlewareServerHandler(Socket socket) throws Exception
         {
@@ -125,7 +126,7 @@ public class MiddlewareServer
             }
             try{
                 //Upon crash recovery, need to check if Middleware was in 2PC
-                String twoPCState = tm.getMiddlewareState(to.getXId());
+                String twoPCState = tm.getMiddlewareState();
                 if(!twoPCState.equals("none")){
                     in2PC = true; //flag that middleware was in 2PC when it crashed
                 }
@@ -140,18 +141,63 @@ public class MiddlewareServer
                 boolean isStarted = false;
                 //Perform 2PC before taking any more client commands
                 while(in2PC){
-                    String twoPCState = tm.getMiddlewareState(to.getXId());
+                    String twoPCState = tm.getMiddlewareState();
                     switch(twoPCState.split(",")[0]){
                         case "beforeVote":{
                             //send vote request
-                            f_out.println("Prepare,0");
-                            c_out.println("Prepare,0");
-                            r_out.println("Prepare,0");
+                            //CRASH 1 HERE
+                            f_out.println("Prepare," + to.getXId());
+                            c_out.println("Prepare," + to.getXId());
+                            r_out.println("Prepare," + to.getXId());
                             tm.sentVote();
+                            //CRASH 2 HERE
                             break;
                         }
                         case "waitingFor":{
-
+                            //cycle through each RM to get its response
+                            
+                            if(twoPCState.contains("Flight")){
+                                String f_resp = f_in.readLine();
+                                tm.receivedVote("Flight");
+                                //CRASH 3 HERE
+                                votes[0] = f_resp == "YES" ? 1 : 0;
+                            }else if(twoPCState.contains("Room")){
+                                String r_resp = r_in.readLine();
+                                tm.receivedVote("Room");
+                                votes[1] = r_resp == "YES" ? 1 : 0;
+                            }else if(twoPCState.contains("Car")){
+                                String c_resp = c_in.readLine();
+                                tm.receivedVote("Car");
+                                votes[2] = c_resp == "YES" ? 1 : 0;
+                            }else if(twoPCState.contains("none")){
+                                //all votes received
+                                tm.receivedAllVotes(votes);
+                                //CRASH 4 HERE
+                            }
+                            break;
+                        }
+                        case "receivedAllVotes":{
+                            tm.makeDecision(twoPCState.split(",")[1]);
+                            //CRASH 5 HERE
+                            break;
+                        }
+                        case "madeDecision":{
+                            //send decisions
+                            Boolean decision = Boolean.parseBoolean(twoPCState.split(",")[1]);
+                            if(decision){
+                                f_out.println("Commit,");
+                                tm.sentDecision("Flight", decision);
+                                //CRASH 6 HERE
+                            }
+                            if(decision){
+                                r_out.println("Commit,");
+                                tm.sentDecision("Room", decision);
+                            }
+                            if(decision) {
+                                c_out.println("Commit,");
+                                tm.sentDecision("Car", decision);
+                            }
+                            //CRASH 7 HERE
                         }
                     }
                 }
@@ -371,9 +417,9 @@ public class MiddlewareServer
                                 {
                                     lm.UnlockAll(to.getXId());
                                     //tm.commit(to.getXId());
-                                    tm.begin2PC(to.getXId());
+                                    tm.begin2PC();
                                     //before sending vote
-
+                                    
                                     isStarted = false;
                                     //WHEN TELLING OTHER RM'S TO COMMIT:  innerExecute(inputLine, false, false);
                                     out.println("Commited transaction [" + to.getXId() + "]");
