@@ -532,7 +532,7 @@ public class MiddlewareServer
                                             }
                                         }
                                     }
-                                    //----
+                                    //---- RECEIVED ALL . GOING TO MAKE DECISION
                                     twoPCState = tm.getMiddlewareState();
                                     System.out.println(twoPCState);
                                     tm.makeDecision(twoPCState.split(",")[1], Integer.parseInt(twoPCState.split(",")[2]));
@@ -541,7 +541,7 @@ public class MiddlewareServer
                                         System.out.println("Middleware server about to crash with mode: 5");
                                         System.exit(1);
                                     }
-                                    //----
+                                    //---- MADE DECISION . GOING TO SEND DECISION
                                     twoPCState = tm.getMiddlewareState();
                                     System.out.println(twoPCState);
                                     Boolean decision = Boolean.parseBoolean(twoPCState.split(",")[1]);
@@ -568,17 +568,18 @@ public class MiddlewareServer
                                         System.out.println("Middleware server about to crash with mode: 7");
                                         System.exit(1);
                                     }
-                                    //----
+                                    //---- DECISIONS SENT
                                     
                                     tm.allDecisionsSent(Integer.parseInt(twoPCState.split(",")[2]));
                                     isStarted = false;
+                                    System.out.println("Committed transaction [" + twoPCState.split(",")[2] + "]");
                                     //WHEN TELLING OTHER RM'S TO COMMIT:  innerExecute(inputLine, false, false);
                                     out.println("Commited transaction [" + to.getXId() + "]");
                                     break;
                                 }
                                 case Abort:
                                 {
-                                    tm.commit(to.getXId());
+                                    //tm.commit(to.getXId());
                                     isStarted = false;
                                     
                                     String[] operationHistory = tm.getOperationHistory(Integer.parseInt(arguments.elementAt(1)));
@@ -815,7 +816,7 @@ public class MiddlewareServer
                                 {
                                     int mode = Integer.valueOf(arguments.elementAt(2).trim());
                                     String cmdString = "CrashRMServer, " + mode;
-                                    String server_name = argments.elementAt(1).trim();
+                                    String server_name = arguments.elementAt(1).trim();
                                     if(server_name.equals("Flight")){
                                         f_out.write(cmdString);
                                     }else if(server_name.equals("Car")){
@@ -836,7 +837,7 @@ public class MiddlewareServer
                                 }
                                 case ResetCrash:
                                 {
-                                    String server_name = argments.elementAt(1).trim();
+                                    String server_name = arguments.elementAt(1).trim();
                                     if(server_name.equals("Flight")){
                                         f_out.write("ResetRMCrash");
                                     }else if(server_name.equals("Car")){
@@ -853,8 +854,8 @@ public class MiddlewareServer
                                 }
                                 case GetCrashStatus:
                                 {
-                                    String server_name = argments.elementAt(1).trim();
-                                    String resp = "";
+                                    String server_name = arguments.elementAt(1).trim();
+                                    resp = "";
                                     if(server_name.equals("Flight")){
                                         f_out.write("GetCrashStatus");
                                         resp = f_in.readLine();

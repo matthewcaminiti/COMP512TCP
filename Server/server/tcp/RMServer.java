@@ -805,7 +805,10 @@ public class RMServer
                         //succesfully renamed tempFile
                     }
                     cfbw.close();
-                    out.println("Committed: " + arguments.elementAt(1));
+                    //--------------------------------LINE OF BRICKAGE------------------------------- 
+                    // out.println("Committed: " + arguments.elementAt(1));
+                    System.out.println("Committed: " + arguments.elementAt(1));
+                    //-------------------------------------------------------------------
                     break;
                 }
                 case Abort:{
@@ -924,6 +927,7 @@ public class RMServer
                     Vector<String> asd = new Vector<String>();
                     asd.add(arguments.elementAt(0));
                     asd.add(arguments.elementAt(1));
+                    //EXECUTE COMMIT/ABORT
                     execute(cmdexec, asd);
 
 
