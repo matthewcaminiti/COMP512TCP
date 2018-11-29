@@ -44,7 +44,7 @@ public enum Command {
 	CrashTM("Force crash of the Middleware","<mode>"),
 	ResetCrash("Reset crash status of server", "<ServerName>"),
 	GetCrashStatus("Get crash status of server", "<ServerName>"),
-	ResetRMCrash("Reset crash status of RM server [internal use - not a client command]"),
+	ResetRMCrash("Reset crash status of RM server [internal use - not a client command]", ""),
 	Prepare("Request a decision from the RMs", "<xid>"),
 	Shutdown("Shutdown the whole operation", "");
 
