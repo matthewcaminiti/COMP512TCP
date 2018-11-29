@@ -146,7 +146,7 @@ public class MiddlewareServer
                         case "beforeVote":{
                             //send vote request
                             if(tm.getCrashStatus() == 1){
-                                System.out.println("Middleware about to crash with mode: 1");
+                                System.out.println("Middleware server about to crash with mode: 1");
                                 System.exit(1);
                             }
                             f_out.println("Prepare," + twoPCState.split(",")[1]);
@@ -154,7 +154,7 @@ public class MiddlewareServer
                             r_out.println("Prepare," + twoPCState.split(",")[1]);
                             tm.sentVote(Integer.parseInt(twoPCState.split(",")[1]));
                             if(tm.getCrashStatus() == 2){
-                                System.out.println("Middleware about to crash with mode: 2");
+                                System.out.println("Middleware server about to crash with mode: 2");
                                 System.exit(1);
                             }
                             break;
@@ -165,7 +165,7 @@ public class MiddlewareServer
                                 String f_resp = f_in.readLine();
                                 tm.receivedVote("Flight", Integer.parseInt(twoPCState.split(",")[1]));
                                 if(tm.getCrashStatus() == 3){
-                                    System.out.println("Middleware about to crash with mode: 3");
+                                    System.out.println("Middleware server about to crash with mode: 3");
                                     System.exit(1);
                                 }
                                 votes[0] = f_resp == "YES" ? 1 : 0;
@@ -181,7 +181,7 @@ public class MiddlewareServer
                                 //all votes received
                                 tm.receivedAllVotes(votes, Integer.parseInt(twoPCState.split(",")[1]));
                                 if(tm.getCrashStatus() == 4){
-                                    System.out.println("Middleware about to crash with mode: 4");
+                                    System.out.println("Middleware server about to crash with mode: 4");
                                     System.exit(1);
                                 }
                             }
@@ -190,7 +190,7 @@ public class MiddlewareServer
                         case "receivedAllVotes":{
                             tm.makeDecision(twoPCState.split(",")[1], Integer.parseInt(twoPCState.split(",")[2]));
                             if(tm.getCrashStatus() == 5){
-                                System.out.println("Middleware about to crash with mode: 5");
+                                System.out.println("Middleware server about to crash with mode: 5");
                                 System.exit(1);
                             }
                             break;
@@ -201,21 +201,21 @@ public class MiddlewareServer
                             if(decision){
                                 f_out.println("Commit," + twoPCState.split(",")[1]);
                                 tm.sentDecision("Flight", decision, Integer.parseInt(twoPCState.split(",")[1]));
+                                
                                 if(tm.getCrashStatus() == 6){
-                                    System.out.println("Middleware about to crash with mode: 6");
+                                    System.out.println("Middleware server about to crash with mode: 6");
                                     System.exit(1);
                                 }
-                            }
-                            if(decision){
+
                                 r_out.println("Commit," + twoPCState.split(",")[1]);
                                 tm.sentDecision("Room", decision, Integer.parseInt(twoPCState.split(",")[1]));
-                            }
-                            if(decision) {
+
                                 c_out.println("Commit," + twoPCState.split(",")[1]);
                                 tm.sentDecision("Car", decision, Integer.parseInt(twoPCState.split(",")[1]));
                             }
+                            
                             if(tm.getCrashStatus() == 7){
-                                System.out.println("Middleware about to crash with mode: 7");
+                                System.out.println("Middleware server about to crash with mode: 7");
                                 System.exit(1);
                             }
                         }
@@ -697,7 +697,6 @@ public class MiddlewareServer
                                     
                                     break;
                                 }
-                                
                                 case CrashTM:
                                 {
                                     int mode = Integer.valueOf(arguments.elementAt(2).trim());
