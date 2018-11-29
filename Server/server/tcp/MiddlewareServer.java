@@ -693,7 +693,7 @@ public class MiddlewareServer
                                 }
                                 case Timeout:
                                 {
-                                    tm.commit(to.getXId());
+                                    //tm.commit(to.getXId());
                                     isStarted = false;
                                     
                                     String[] operationHistory = tm.getOperationHistory(Integer.parseInt(arguments.elementAt(1)));
@@ -703,7 +703,7 @@ public class MiddlewareServer
                                     LinkedList<String> carDataHistory = tm.getDataHistory(to.getXId(), "car");
                                     LinkedList<String> customerDataHistory = tm.getDataHistory(to.getXId(), "customer");
                                     
-                                    out.println("Aborted transaction [" + to.getXId() + "]");
+                                    out.println("Aborted transaction DUE TO TIMEOUT [" + to.getXId() + "]");
                                     
                                     System.out.println("Have identified " + operationHistory.length + " operations to undo");
                                     for(int i = operationHistory.length-1 ; i >= 0 ; i--){
@@ -802,6 +802,7 @@ public class MiddlewareServer
                                         }
                                     }
                                     lm.UnlockAll(to.getXId());
+                                    //innerExecute(inputLine, false, false);
                                     break;
                                 }
                                 case Shutdown:
