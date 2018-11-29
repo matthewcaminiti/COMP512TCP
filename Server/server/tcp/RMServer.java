@@ -120,7 +120,7 @@ public class RMServer
                     if(!stagedTrans.createNewFile()){
                         //if already exists committed transaction file
                         System.out.println("Found stagedTrans" + s_name + ".txt");
-                        FileWriter fw = new FileWriter(stagedTrans);
+                        FileWriter fw = new FileWriter(stagedTrans, true);
                         FileReader fr = new FileReader(stagedTrans);
                         BufferedReader test = new BufferedReader(fr);
                         String line = "";
@@ -134,7 +134,7 @@ public class RMServer
                     }else{
                         //created new staged trans
                         System.out.println("Created new stagedTrans" + s_name + ".txt");
-                        FileWriter fw = new FileWriter(stagedTrans);
+                        FileWriter fw = new FileWriter(stagedTrans, true);
                         sfbw = new BufferedWriter(fw);
                     }
                 }catch(Exception e){
@@ -187,10 +187,11 @@ public class RMServer
                             decision = "YES";
                             tcpState = "madeDecision," + tcpState.split(",")[1] + "," + decision;
                             
-                            FileWriter tpcLog = new FileWriter(twoPCLog);
+                            FileWriter tpcLog = new FileWriter(twoPCLog, true);
                             BufferedWriter bw = new BufferedWriter(tpcLog);
                             
                             bw.write("madeDecision," + arguments.elementAt(1) + "," + decision);
+                            bw.newLine();
                             bw.close();
                             
                             //out.println("YES");
@@ -220,6 +221,7 @@ public class RMServer
                             BufferedWriter bw = new BufferedWriter(tpcLog);
                             
                             bw.write("sentDecision," + lastLine.split(",")[1] + "," + lastLine.split(",")[2]);
+                            bw.newLine();
                             tcpState = "sentDecision," + lastLine.split(",")[1] + "," + lastLine.split(",")[2];
                             bw.close();
                             
@@ -249,6 +251,7 @@ public class RMServer
                             BufferedWriter bw = new BufferedWriter(tpcLog);
                             
                             bw.write("receivedDecision," + lastLine.split(",")[1] + "," + masterDecision);
+                            bw.newLine();
                             tcpState = "receivedDecision," + lastLine.split(",")[1] + "," + masterDecision;
                             bw.close();
                             
@@ -302,6 +305,7 @@ public class RMServer
                             BufferedWriter bw = new BufferedWriter(tpcLog);
                             
                             bw.write("none");
+                            bw.newLine();
                             tcpState = "none";
                             bw.close();
                             
@@ -338,8 +342,8 @@ public class RMServer
                                     FileWriter fw = new FileWriter(stagedTrans, true);
                                     sfbw = new BufferedWriter(fw);
                                 }
-                                sfbw.write(inputLine);
-                                sfbw.newLine();
+                                if(!inputLine.contains("Prepare")) sfbw.write(inputLine);
+                                if(!inputLine.contains("Prepare")) sfbw.newLine();
                                 sfbw.close();
                                 System.out.println("Wrote to stagedTrans and closed");
                             }
@@ -824,6 +828,7 @@ public class RMServer
                     }
                     reader.close();
                     tempWriter.write("Abort," + arguments.elementAt(1));
+                    tempWriter.newLine();
                     tempWriter.close();
                     stagedTrans.delete();
                     if(temp.renameTo(stagedTrans)){
@@ -834,10 +839,11 @@ public class RMServer
                     break;
                 }
                 case Prepare:{
-                    FileWriter tpcLog = new FileWriter(twoPCLog);
+                    FileWriter tpcLog = new FileWriter(twoPCLog, true);
                     BufferedWriter bw = new BufferedWriter(tpcLog);
                     
                     bw.write("receivedVoteReq," + arguments.elementAt(1));
+                    bw.newLine();
                     bw.close();
                     in2PC = true;
 
@@ -865,14 +871,15 @@ public class RMServer
                     }
                     decision = "YES";
                     
-                    tpcLog = new FileWriter(twoPCLog);
+                    tpcLog = new FileWriter(twoPCLog, true);
                     bw = new BufferedWriter(tpcLog);
                     
                     bw.write("madeDecision," + arguments.elementAt(1) + "," + decision);
+                    bw.newLine();
                     bw.close();
                     
                     System.out.println("made decision: " + decision);
-                    
+
                     if(m_resourceManager.getCrashStatus() == 2){
                         System.out.println("Resource manager server (name: " + this.s_name + ") about to crash with mode: 2");
                         System.out.println("    - After deciding which answer to send...");
@@ -881,13 +888,14 @@ public class RMServer
 
                     out.println(decision);
 
-                    tpcLog = new FileWriter(twoPCLog);
+                    tpcLog = new FileWriter(twoPCLog, true);
                     bw = new BufferedWriter(tpcLog);
                     
                     bw.write("sentDecision," + arguments.elementAt(1) + "," + decision);
+                    bw.newLine();
                     bw.close();
 
-                    System.out.println("sentDecision to MW: " + decision);
+                    System.out.println("Sent Decision to MW: " + decision);
 
                     if(m_resourceManager.getCrashStatus() == 3){
                         System.out.println("Resource manager server (name: " + this.s_name + ") about to crash with mode: 3");
@@ -897,12 +905,15 @@ public class RMServer
 
                     String masterDecision = in.readLine(); //waits for commit/abort
 
-                    tpcLog = new FileWriter(twoPCLog);
+                    tpcLog = new FileWriter(twoPCLog, true);
                     bw = new BufferedWriter(tpcLog);
                     
                     bw.write("receivedDecision," + arguments.elementAt(1) + "," + masterDecision.split(",")[0]);
+                    bw.newLine();
                     bw.close();
-                    
+
+                    System.out.println("Received decision from MW");
+
                     if(m_resourceManager.getCrashStatus() == 4){
                         System.out.println("Resource manager server (name: " + this.s_name + ") about to crash with mode: 4");
                         System.out.println("    - After receiving decision but before committing/aborting...");

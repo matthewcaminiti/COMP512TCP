@@ -37,7 +37,7 @@ public class TransactionManager
     private File twoPCLog = null;
     
     private int crashMode = 0;
-
+    
     BufferedReader tpcbr = null;
     BufferedWriter tpcbw = null;
     
@@ -65,11 +65,11 @@ public class TransactionManager
         
         return new TransactionObject(transactionCounter);
     }
-
+    
     public void crashMiddleware(int mode){
         this.crashMode = mode;
     }
-
+    
     public void resetCrashes(){
         this.crashMode = 0;
     }
@@ -77,7 +77,7 @@ public class TransactionManager
     public int getCrashStatus(){
         return crashMode;
     }
-
+    
     //implement 1-phase commit: tell the appropriate RM's that they should commit/abort the transaction
     public boolean commit(int transactionId) throws RemoteException, InvalidTransactionException
     {
@@ -292,16 +292,28 @@ public class TransactionManager
             while((line = br.readLine()) != null){
                 if(line.split(",")[0] == "waitingFor"){
                     if(line.split(",").length == 3){
-                        tempWriter.write("waitingFor," + xid + "none");
+                        tempWriter.write("waitingFor," + xid + ",none");
                         continue;
                     }
+                    /*
                     String fill = "waitingFor," + xid;
                     for(int i = 2 ; i < line.split(",").length; i++){
                         if(line.split(",")[i] != rmName){
-                            fill += line.split(",")[i] + ",";
+                            fill += "," + line.split(",")[i];
+                        }
+                    }*/
+                    String tempa = "";
+                    for(int i=0; i < line.split(",").length; i++){
+                        if(!line.split(",")[i].equals("Flight")){
+                            tempa += line.split(",")[i] + ",";
                         }
                     }
-                    tempWriter.write(fill);
+                    line = tempa.substring(0, tempa.length());
+                    if(line.split(",").length == 2){
+                        line = line.split(",")[0] + "," + line.split(",")[1] + ",none";
+                    }
+                    
+                    tempWriter.write(tempa);
                     tempWriter.newLine();
                 }else{
                     tempWriter.write(line);
@@ -353,24 +365,64 @@ public class TransactionManager
             bw.newLine();
             bw.close();
         }catch(Exception e){
-
+            
         }
         return Boolean.parseBoolean(voteBool);
     }
-
+    
     public boolean sentDecision(String rm, Boolean decision, int xid){
         try{
             twoPCLog = new File("../twoPCLog.txt");
             FileWriter fw = new FileWriter(twoPCLog, true);
             BufferedWriter bw = new BufferedWriter(fw);
             
-            bw.write("madeDecision," + decision + "," + xid);
+            bw.write("sentDecision," + rm + "," + decision + "," + xid);
             bw.newLine();
             bw.close();
         }catch(Exception e){
-
+            
         }
         return decision;
+        
+    }
+    
+    public boolean allDecisionsSent(int xid){
+        try{
+            twoPCLog = new File("../twoPCLog.txt");
+            // FileReader fr = new FileReader(twoPCLog);
+            // BufferedReader br = new BufferedReader(fr);
+            // String line = "";
+            // int decisionCount = 0;
+            // while((line = br.readLine()) != null){
+            //     if(line.contains("sentDecision") && line.contains("" + xid)) decisionCount++;
+            // }
+            // br.close();
+            // if(decisionCount == 3){
+                // FileWriter fw = new FileWriter(twoPCLog, true);
+                // BufferedWriter bw = new BufferedWriter(fw);
+                
+                // bw.write("none"); //all decisions sent, indicate in log that not in 2PC anymore
+                // bw.newLine();
+                // bw.close();
+            // }
 
+            File temp = new File("tempPCLog");
+            FileWriter tempFw = new FileWriter(temp, true);
+            BufferedWriter tempWriter = new BufferedWriter(tempFw);
+
+            twoPCLog.delete();
+
+            //tempWriter.write("none"); //all decisions sent, indicate in log that not in 2PC anymore
+            tempWriter.newLine();
+            tempWriter.close();
+
+            if(temp.renameTo(twoPCLog)){
+                //succesfully renamed tempFile
+            }
+
+        }catch (Exception e){
+            //TODO
+        }
+        return false;
     }
 }
