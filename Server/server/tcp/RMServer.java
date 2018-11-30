@@ -200,9 +200,10 @@ public class RMServer
                         execute(Command.Commit, tempArgs);
                     }else{
                         //no commit/abort record
-                        
-                        //------- MESSAGE MW TO FIND TRANSACTION STATUS -----
 
+                        //------- MESSAGE MW TO FIND TRANSACTION STATUS -----
+                        mw_out.println("GetTransState," + tpcState.split(",")[1] + "," + s_name);
+                        String resp = mw_in.readLine();
                         // ---------------------------------------------------
 
                     }

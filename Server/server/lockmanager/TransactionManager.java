@@ -398,35 +398,61 @@ public class TransactionManager
             // String line = "";
             // int decisionCount = 0;
             // while((line = br.readLine()) != null){
-            //     if(line.contains("sentDecision") && line.contains("" + xid)) decisionCount++;
-            // }
-            // br.close();
-            // if(decisionCount == 3){
-                // FileWriter fw = new FileWriter(twoPCLog, true);
-                // BufferedWriter bw = new BufferedWriter(fw);
-                
-                // bw.write("none"); //all decisions sent, indicate in log that not in 2PC anymore
-                // bw.newLine();
-                // bw.close();
-            // }
-
-            File temp = new File("tempPCLog");
-            FileWriter tempFw = new FileWriter(temp, true);
-            BufferedWriter tempWriter = new BufferedWriter(tempFw);
-
-            twoPCLog.delete();
-
-            //tempWriter.write("none"); //all decisions sent, indicate in log that not in 2PC anymore
-            tempWriter.newLine();
-            tempWriter.close();
-
-            if(temp.renameTo(twoPCLog)){
-                //succesfully renamed tempFile
+                //     if(line.contains("sentDecision") && line.contains("" + xid)) decisionCount++;
+                // }
+                // br.close();
+                // if(decisionCount == 3){
+                    // FileWriter fw = new FileWriter(twoPCLog, true);
+                    // BufferedWriter bw = new BufferedWriter(fw);
+                    
+                    // bw.write("none"); //all decisions sent, indicate in log that not in 2PC anymore
+                    // bw.newLine();
+                    // bw.close();
+                    // }
+                    
+                    File temp = new File("tempPCLog");
+                    FileWriter tempFw = new FileWriter(temp, true);
+                    BufferedWriter tempWriter = new BufferedWriter(tempFw);
+                    
+                    twoPCLog.delete();
+                    
+                    //tempWriter.write("none"); //all decisions sent, indicate in log that not in 2PC anymore
+                    tempWriter.newLine();
+                    tempWriter.close();
+                    
+                    if(temp.renameTo(twoPCLog)){
+                        //succesfully renamed tempFile
+                    }
+                    
+                }catch (Exception e){
+                    //TODO
+                }
+                return false;
             }
-
-        }catch (Exception e){
-            //TODO
+            
+            public String getTransactionState(int xid){
+                try{
+                    FileReader fr = new FileReader(twoPCLog);
+                    BufferedReader br = new BufferedReader(fr);
+                    String line = "";
+                    String lastLine = "";
+                    while((line = br.readLine()) != null){
+                        if(line.contains("" + xid)){
+                            lastLine = line;
+                        }
+                    }
+                    if(lastLine.contains("sentDecision")){
+                        if(lastLine.split(",")[2].equals("true")){
+                            return "Committed";
+                        }else{
+                            return "Aborted";
+                        }
+                    }else{
+                        return "Staged";
+                    }
+                }catch (Exception e){
+                    //i.o exception
+                }
+                return null; //null if exception
+            }
         }
-        return false;
-    }
-}

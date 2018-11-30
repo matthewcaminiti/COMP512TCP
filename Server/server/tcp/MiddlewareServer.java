@@ -913,6 +913,7 @@ public class MiddlewareServer
                                             //was either a read or inconsequential
                                             break;
                                         }
+                                        
                                     }
                                     lm.UnlockAll(to.getXId());
                                     //innerExecute(inputLine, false, false);
@@ -990,6 +991,16 @@ public class MiddlewareServer
                                     }
                                     
                                     System.out.println(resp);
+                                    break;
+                                }
+                                case GetTransState:{
+                                    if(arguments.elementAt(2).equals("Flight")){
+                                        f_out.write(tm.getTransactionState(Integer.parseInt(arguments.elementAt(1))));
+                                    }else if(arguments.elementAt(2).equals("Car")){
+                                        c_out.write(tm.getTransactionState(Integer.parseInt(arguments.elementAt(1))));
+                                    }else if(arguments.elementAt(2).equals("Room")){
+                                        r_out.write(tm.getTransactionState(Integer.parseInt(arguments.elementAt(1))));
+                                    }
                                     break;
                                 }
                                 default:
