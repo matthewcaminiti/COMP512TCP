@@ -14,11 +14,11 @@ public class MiddlewareServer
     public ResourceManager rm;
     public String s_name;
     
-    public int timeoutMs = 30000;
+    public static int timeoutMs = 30000;
     
-    public boolean carRMDown = false;
-    public boolean flightRMDown = false;
-    public boolean roomRMDown = false;
+    public static boolean carRMDown = false;
+    public static boolean flightRMDown = false;
+    public static boolean roomRMDown = false;
     
     public static int portnum = 5523;
     
@@ -42,6 +42,9 @@ public class MiddlewareServer
     public static LockManager lm;
     
     public static String twoPCState;
+    
+    private static File committedTrans = null;
+    private static File stagedTrans = null;
     public static void main(String[] args) throws Exception
     {
         //args[0] = flight ip
@@ -80,6 +83,8 @@ public class MiddlewareServer
         tm = new TransactionManager();
         lm = new LockManager();
         
+        committedTrans = new File("../committedTransMW.txt");
+        stagedTrans = new File("../stagedTransMW.txt");
         
         while(true){
             new MiddlewareServerHandler(serverSocket.accept()).start();
@@ -112,10 +117,9 @@ public class MiddlewareServer
         public void run()
         {
             try{
-                File committedTrans = new File("../committedTrans.txt");
                 if(!committedTrans.createNewFile()){
                     //if already exists committed transaction file
-                    System.out.println("Found committedTrans.txt");
+                    System.out.println("Found committedTransMW.txt");
                     FileReader fr = new FileReader(committedTrans);
                     //Committed Transaction file will contain each transaction in chronological order (of commits)
                     // CT file will not have Transaction ID except for withing Commands
@@ -127,10 +131,31 @@ public class MiddlewareServer
                         //innerExecute(line, false, false);
                         System.out.println(line);
                     }
-                    
                 }else{
                     //created new empty committedTrans.txt
                     System.out.println("Created new committedTrans.txt");
+                }
+            }catch (Exception e){
+                //TODO: handle I/O errors
+            }
+            try{
+                if(!stagedTrans.createNewFile()){
+                    //if already exists committed transaction file
+                    System.out.println("Found stagedTransMW.txt");
+                    FileReader fr = new FileReader(stagedTrans);
+                    //Committed Transaction file will contain each transaction in chronological order (of commits)
+                    // CT file will not have Transaction ID except for withing Commands
+                    BufferedReader fbr = new BufferedReader(fr);
+                    String line;
+                    int currXid = -1;
+                    while((line = fbr.readLine()) != null){
+                        //line will contain command
+                        //innerExecute(line, false, false);
+                        System.out.println(line);
+                    }
+                }else{
+                    //created new empty committedTrans.txt
+                    System.out.println("Created new stagedTransMW.txt");
                 }
             }catch (Exception e){
                 //TODO: handle I/O errors
@@ -150,13 +175,13 @@ public class MiddlewareServer
                 Vector<String> arguments = new Vector<String>();
                 String inputLine;
                 boolean isStarted = false;
-
+                
                 //Perform 2PC before taking any more client commands
                 while(in2PC){
-
+                    
                     String twoPCState = tm.getMiddlewareState();
                     switch(twoPCState.split(",")[0]){
-
+                        
                         case "beforeVote":{
                             //send vote request
                             if(tm.getCrashStatus() == 1){
@@ -174,21 +199,21 @@ public class MiddlewareServer
                             }
                             break;
                         }
-
+                        
                         case "waitingFor":{
-
+                            
                             Date startTime = new Date();
                             boolean allVotesReceived = false;
-                            while(((System.currentTimeMillis() - startTime.getTime()) < this.timeoutMs) && !allVotesReceived){
+                            while(((System.currentTimeMillis() - startTime.getTime()) < timeoutMs) && !allVotesReceived){
                                 //cycle through each RM to get its response
                                 
                                 if(twoPCState.contains("none")){
                                     //all votes received
-                                    m.receivedAllVotes(votes, Integer.parseInt(twoPCState.split(",")[1]));
+                                    tm.receivedAllVotes(votes, Integer.parseInt(twoPCState.split(",")[1]));
                                     allVotesReceived = true;
                                     if(tm.getCrashStatus() == 4){
-                                      System.out.println("Middleware server about to crash with mode: 4");
-                                       System.exit(1);
+                                        System.out.println("Middleware server about to crash with mode: 4");
+                                        System.exit(1);
                                     }
                                 }else{
                                     if(twoPCState.contains("Flight")){
@@ -210,36 +235,36 @@ public class MiddlewareServer
                                     if(twoPCState.contains("Car")){
                                         String c_resp = c_in.readLine();
                                         tm.receivedVote("Car", Integer.parseInt(twoPCState.split(",")[1]));
-                                        otes[2] = c_resp == "YES" ? 1 : 0;
+                                        votes[2] = c_resp == "YES" ? 1 : 0;
                                     }
                                 }
                             }
-
+                            
                             if(!allVotesReceived){
-                                if(twoPCState.contains("Car")){ this.carRMDown = true; }
-                                if(twoPCState.contains("Room")){ this.roomRMDown = true; }
-                                if(twoPCState.contains("Flight")){ this.flightRMDown = true; }
-
+                                if(twoPCState.contains("Car")){ carRMDown = true; }
+                                if(twoPCState.contains("Room")){ roomRMDown = true; }
+                                if(twoPCState.contains("Flight")){ flightRMDown = true; }
+                                
                                 //HANDLE SERVER(S) BEING DOWN... abort transaction
                                 //Communicate this to the Resource Managers
-
+                                
                             }
-
+                            
                             break;
                         }
-
+                        
                         case "receivedAllVotes":{
-
+                            
                             tm.makeDecision(twoPCState.split(",")[1], Integer.parseInt(twoPCState.split(",")[2]));
-
+                            
                             if(tm.getCrashStatus() == 5){
                                 System.out.println("Middleware server about to crash with mode: 5");
                                 System.exit(1);
                             }
-
+                            
                             break;
                         }
-
+                        
                         case "madeDecision":{
                             //send decisions
                             Boolean decision = Boolean.parseBoolean(twoPCState.split(",")[1]);
@@ -279,6 +304,33 @@ public class MiddlewareServer
                         String resp_c = "";
                         String resp_r = "";
                         Command cmd = Command.fromString((String)arguments.elementAt(0));
+                        if(!inputLine.contains("GetData") && !inputLine.contains("Quit") && !inputLine.contains("Query") && !inputLine.contains("Crash")){
+                            BufferedWriter sfbw = null;
+                            if(!stagedTrans.createNewFile()){
+                                //if already exists committed transaction file
+                                System.out.println("Found stagedTransMW.txt");
+                                FileWriter fw = new FileWriter(stagedTrans, true);
+                                FileReader fr = new FileReader(stagedTrans);
+                                BufferedReader test = new BufferedReader(fr);
+                                String line = "";
+                                while((line = test.readLine()) != null){
+                                    System.out.println(line);
+                                }
+                                //Committed Transaction file will contain each transaction in chronological order (of commits)
+                                // CT file will not have Transaction ID except for within Commands
+                                // Should be able to safely re-execute each command
+                                sfbw = new BufferedWriter(fw);
+                            }else{
+                                //created new staged trans
+                                System.out.println("Created new stagedTransMW.txt");
+                                FileWriter fw = new FileWriter(stagedTrans, true);
+                                sfbw = new BufferedWriter(fw);
+                            }
+                            if(!inputLine.contains("Prepare")) sfbw.write(inputLine);
+                            if(!inputLine.contains("Prepare")) sfbw.newLine();
+                            sfbw.close();
+                            System.out.println("Wrote to stagedTrans and closed");
+                        }
                         if(isStarted && !cmd.equals(Command.Shutdown) && !cmd.equals(Command.Timeout) && !cmd.equals(Command.CrashRM)){
                             if(cmd.equals(Command.Commit) && arguments.size() == 1){
                                 out.println("Please enter XID to commit");

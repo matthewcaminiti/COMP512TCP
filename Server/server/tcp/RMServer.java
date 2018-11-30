@@ -52,7 +52,7 @@ public class RMServer
         BufferedWriter cfbw = null;
         BufferedWriter sfbw = null;
         
-        private String tcpState = "";
+        private String tpcState = "";
         
         public RMServerHandler(Socket socket, ResourceManager rm, String name)
         {
@@ -123,21 +123,40 @@ public class RMServer
                         //if already exists committed transaction file
                         System.out.println("Found stagedTrans" + s_name + ".txt");
                         FileWriter fw = new FileWriter(stagedTrans, true);
+
                         FileReader fr = new FileReader(stagedTrans);
                         BufferedReader test = new BufferedReader(fr);
                         String line = "";
+                        
+                        arguments = new Vector<String>();
+                        PrintWriter old_out = out;
+                        out = new PrintWriter(System.out);
                         while((line = test.readLine()) != null){
-                            System.out.println(line);
+                            arguments = parse(line);
+                            try{
+                                Command cmd = Command.fromString((String)arguments.elementAt(0));
+                                try{
+                                    execute(cmd, arguments);
+                                }catch (Exception e){
+                                    System.out.println("Execute crapped out.");
+                                    e.printStackTrace();
+                                }
+                                
+                            }catch (Exception e){
+                                System.out.println("Unknown command: " + line);
+                                e.printStackTrace();
+                            }
                         }
+                        arguments = new Vector<String>();
                         //Committed Transaction file will contain each transaction in chronological order (of commits)
                         // CT file will not have Transaction ID except for within Commands
                         // Should be able to safely re-execute each command
-                        sfbw = new BufferedWriter(fw);
+                        //sfbw = new BufferedWriter(fw);
                     }else{
                         //created new staged trans
                         System.out.println("Created new stagedTrans" + s_name + ".txt");
-                        FileWriter fw = new FileWriter(stagedTrans, true);
-                        sfbw = new BufferedWriter(fw);
+                        //FileWriter fw = new FileWriter(stagedTrans, true);
+                        //sfbw = new BufferedWriter(fw);
                     }
                 }catch(Exception e){
                     System.out.println("Error when accessing stagedTrans. : ");
@@ -149,19 +168,47 @@ public class RMServer
                     BufferedReader br = new BufferedReader(fr);
                     
                     String line = "";
-                    tcpState = "none";
+                    tpcState = "none";
                     while((line = br.readLine()) != null){
-                        tcpState = line;
+                        tpcState = line;
                     }
-                    if(tcpState != "none"){
+                    if(tpcState != "none"){
                         in2PC = true;
                     }
                 }catch (Exception e){
                     //i/o error
                 }
                 
+                //---------------------- ON REBOOT: BEFORE ENTERING 2PC -> ASK COORDINATOR WHAT'S UP -----------
+                if(in2PC){
+                    Socket mwSocket = new Socket(mwIP, mwPort);
+                    PrintWriter mw_out = new PrintWriter(clientSocket.getOutputStream(), true);
+                    BufferedReader mw_in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+                    
+                    //if server received master decision from MW before crashing, act on it and thats it
+                    if(tpcState.contains("Commit")){
+                        Vector<String> tempArgs = new Vector<String>();
+                        tempArgs.add(tpcState.split(",")[2]);
+                        tempArgs.add(tpcState.split(",")[1]);
+                        execute(Command.Commit, tempArgs);
+                    }else if(tpcState.contains("Abort")){
+                        Vector<String> tempArgs = new Vector<String>();
+                        tempArgs.add(tpcState.split(",")[2]);
+                        tempArgs.add(tpcState.split(",")[1]);
+                        execute(Command.Commit, tempArgs);
+                    }else{
+                        //no commit/abort record
+
+                        //------- MESSAGE MW TO FIND TRANSACTION STATUS -----
+
+                        // ---------------------------------------------------
+
+                    }
+                }
+                
+                
                 while(in2PC){
-                    switch(tcpState.split(",")[0]){
+                    switch(tpcState.split(",")[0]){
                         case "receivedVoteReq":{
                             if(m_resourceManager.getCrashStatus() == 1){
                                 System.out.println("Resource manager server (name: " + this.s_name + ") about to crash with mode: 1");
@@ -180,7 +227,7 @@ public class RMServer
                             //line is now last operation executed
                             br.close();
                             
-                            System.out.println("Upon crash recovery, determined last 2PC log: " + tcpState);
+                            System.out.println("Upon crash recovery, determined last 2PC log: " + tpcState);
                             
                             String decision = "";
                             if(lastLine.split(",")[0] == "Abort"){
@@ -189,14 +236,14 @@ public class RMServer
                             }
                             in2PC = true;
                             decision = "YES";
-                            tcpState = "madeDecision," + tcpState.split(",")[1] + "," + decision;
+                            tpcState = "madeDecision," + tpcState.split(",")[1] + "," + decision;
                             
                             System.out.println("Made decision [" + decision + "]");
                             
                             FileWriter tpcLog = new FileWriter(twoPCLog, true);
                             BufferedWriter bw = new BufferedWriter(tpcLog);
                             
-                            bw.write("madeDecision," + tcpState.split(",")[1] + "," + decision);
+                            bw.write("madeDecision," + tpcState.split(",")[1] + "," + decision);
                             bw.newLine();
                             bw.close();
                             
@@ -229,18 +276,18 @@ public class RMServer
                             
                             bw.write("sentDecision," + lastLine.split(",")[1] + "," + lastLine.split(",")[2]);
                             bw.newLine();
-                            tcpState = "sentDecision," + lastLine.split(",")[1] + "," + lastLine.split(",")[2];
+                            tpcState = "sentDecision," + lastLine.split(",")[1] + "," + lastLine.split(",")[2];
                             bw.close();
                             
                             break;
                         }
                         case "sentDecision":{
                             
-                            mwSocket = new Socket(mwIP, mwPort);
-                            mw_out = new PrintWriter(clientSocket.getOutputStream(), true);
-                            mw_in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-
-
+                            // mwSocket = new Socket(mwIP, mwPort);
+                            // mw_out = new PrintWriter(clientSocket.getOutputStream(), true);
+                            // mw_in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+                            
+                            
                             if(m_resourceManager.getCrashStatus() == 3){
                                 System.out.println("Resource manager server (name: " + this.s_name + ") about to crash with mode: 3");
                                 System.out.println("    - After sending answer...");
@@ -265,7 +312,7 @@ public class RMServer
                             
                             bw.write("receivedDecision," + lastLine.split(",")[1] + "," + masterDecision);
                             bw.newLine();
-                            tcpState = "receivedDecision," + lastLine.split(",")[1] + "," + masterDecision;
+                            tpcState = "receivedDecision," + lastLine.split(",")[1] + "," + masterDecision;
                             bw.close();
                             
                             if(m_resourceManager.getCrashStatus() == 4){
@@ -323,7 +370,7 @@ public class RMServer
                             
                             bw.write("none");
                             bw.newLine();
-                            tcpState = "none";
+                            tpcState = "none";
                             bw.close();
                             
                             break;
@@ -911,6 +958,8 @@ public class RMServer
                     
                     out.println(decision);
                     
+                    //IF DECISION == "NO" THEN START TIMER
+                    //IF TIMER 
                     tpcLog = new FileWriter(twoPCLog, true);
                     bw = new BufferedWriter(tpcLog);
                     
@@ -927,6 +976,7 @@ public class RMServer
                     }
                     
                     String masterDecision = in.readLine(); //waits for commit/abort
+                    
                     
                     tpcLog = new FileWriter(twoPCLog, true);
                     bw = new BufferedWriter(tpcLog);
