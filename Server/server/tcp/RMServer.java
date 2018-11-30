@@ -112,6 +112,7 @@ public class RMServer
             }catch(Exception e){
                 
             }
+            
             try{
                 out = new PrintWriter(clientSocket.getOutputStream(), true);
                 in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
@@ -164,52 +165,58 @@ public class RMServer
                     e.printStackTrace();
                 }
 
+                boolean checkWithMiddleware = false;
+                Vector<String> commandArgs = new Vector<String>();
                 try{
                     twoPCLog.createNewFile();
                     FileReader fr = new FileReader(twoPCLog);
                     BufferedReader br = new BufferedReader(fr);
                     
+                    String lastLine = "";
                     String line = "";
-                    tpcState = "none";
                     while((line = br.readLine()) != null){
-                        tpcState = line;
+                        lastLine = line;
                     }
-                    if(tpcState != "none"){
-                        in2PC = true;
+
+                    commandArgs = parse(lastLine);
+                    
+                    if(lastLine.contains("Commit")){
+                        execute(Command.Commit, commandArgs);
+                    }else if(lastLine.contains("Abort")){
+                        execute(Command.Abort, commandArgs);
+                    }else{
+                        checkWithMiddleware = true;
                     }
+
                 }catch (Exception e){
                     //i/o error
                 }
                 
                 //---------------------- ON REBOOT: BEFORE ENTERING 2PC -> ASK COORDINATOR WHAT'S UP -----------
-                if(in2PC){
-                    System.out.println("Detected that server was in 2PC");
+                if(checkWithMiddleware){
+                    System.out.println("Transaction state unknown when server crashed - ask Middleware");
                     Socket mwSocket = new Socket(mwIP, mwPort);
                     PrintWriter mw_out = new PrintWriter(clientSocket.getOutputStream(), true);
                     BufferedReader mw_in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
                     
-                    //if server received master decision from MW before crashing, act on it and thats it
-                    if(tpcState.contains("Commit")){
-                        Vector<String> tempArgs = new Vector<String>();
-                        tempArgs.add(tpcState.split(",")[2]);
-                        tempArgs.add(tpcState.split(",")[1]);
-                        execute(Command.Commit, tempArgs);
-                    }else if(tpcState.contains("Abort")){
-                        Vector<String> tempArgs = new Vector<String>();
-                        tempArgs.add(tpcState.split(",")[2]);
-                        tempArgs.add(tpcState.split(",")[1]);
-                        execute(Command.Abort, tempArgs);
-                    }else{
                         //no commit/abort record
 
                         //------- MESSAGE MW TO FIND TRANSACTION STATUS -----
-                        mw_out.println("GetTransState," + tpcState.split(",")[1] + "," + s_name);
+                        mw_out.println("QueryTransaction," + tpcState.split(",")[1] + "," + s_name);
                         String resp = mw_in.readLine();
+
+                        if(resp.equals("Committed")){
+                            execute(Command.Commit, commandArgs);
+                        }else if (resp.equals("Aborted")){
+                            execute(Command.Abort, commandArgs);
+                        }else if (resp.equals("Staged")){
+                            execute(Command.Prepare, commandArgs);
+                        }else{
+                            System.out.println("Transaction "+tpcState.split(",")[1]+" is in an unknown state.");
+                        }
                         // ---------------------------------------------------
 
-                    }
                 }
-                
                 
                 
                 System.out.println("Waiting for input from MW...");
@@ -706,10 +713,11 @@ public class RMServer
                         //succesfully renamed tempFile
                     }
                     cfbw.close();
+
                     //--------------------------------LINE OF BRICKAGE------------------------------- 
-                    // out.println("Committed: " + arguments.elementAt(1));
                     System.out.println("Committed: " + arguments.elementAt(1));
                     //-------------------------------------------------------------------
+
                     break;
                 }
                 case Abort:{
@@ -769,13 +777,7 @@ public class RMServer
                     //line is now last operation executed
                     br.close();
                     
-                    String decision = "";
-                    if(lastLine.split(",")[0] == "Abort"){
-                        decision = "NO";
-                        //out.println("NO");
-                    }else{
-                        decision = "YES";
-                    }
+                    String decision = "YES";
                     
                     tpcLog = new FileWriter(twoPCLog, true);
                     bw = new BufferedWriter(tpcLog);
