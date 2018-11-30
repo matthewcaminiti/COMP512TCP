@@ -45,6 +45,7 @@ public class MiddlewareServer
     
     private static File committedTrans = null;
     private static File stagedTrans = null;
+
     public static void main(String[] args) throws Exception
     {
         //args[0] = flight ip
@@ -188,6 +189,7 @@ public class MiddlewareServer
                                 System.out.println("Middleware server about to crash with mode: 1");
                                 System.exit(1);
                             }
+
                             f_out.println("Prepare," + twoPCState.split(",")[1]);
                             c_out.println("Prepare," + twoPCState.split(",")[1]);
                             r_out.println("Prepare," + twoPCState.split(",")[1]);
@@ -859,7 +861,7 @@ public class MiddlewareServer
                                             case DeleteRooms:{
                                                 String addRooms = roomDataHistory.removeLast();
                                                 String[] argumentz = addRooms.split(",");
-                                                innerExecute("AddRoomss," + to.getXId() + "," + argumentz[3] + "," + argumentz[2] + "," + argumentz[4], false, true);
+                                                innerExecute("AddRooms," + to.getXId() + "," + argumentz[3] + "," + argumentz[2] + "," + argumentz[4], false, true);
                                                 break;
                                             }
                                             case DeleteCustomer:{
@@ -1331,7 +1333,6 @@ public class MiddlewareServer
                                 }
 
 
-
                                 break;
                             }
                             default:
@@ -1374,6 +1375,48 @@ public class MiddlewareServer
             public static int toInt(String string) throws NumberFormatException
             {
                 return (new Integer(string)).intValue();
+            }
+
+            public static boolean transactionCommitted(int xid){
+                String xid_str = String.valueOf(xid);
+                boolean found = false;
+
+                File committed = new File("../committedTransMW.txt");
+                FileReader fr = new FileReader(committed);
+                BufferedReader fbr = new BufferedReader(fr);
+                
+                String cmd = "";
+                while((cmd = fbr.readLine()) != null){
+                    String[] args = cmd.split(",");
+                    found_xid = args[1];
+                    if(found_xid.equals(xid_str)){
+                        found = true;
+                        break;
+                    }
+                }
+
+                return found;
+            }
+
+            public static boolean transactionStaged(int xid){
+                String xid_str = String.valueOf(xid);
+                boolean found = false;
+
+                File staged = new File("../twoPCLog.txt");
+                FileReader fr = new FileReader(staged);
+                BufferedReader fbr = new BufferedReader(fr);
+
+                String cmd = "";
+                while((cmd = fbr.readLine()) != null){
+                    String[] args = cmd.split(",");
+                    found_xid = args[1];
+                    if(found_xid.equals(xid_str)){
+                        found = true;
+                        break;
+                    }
+                }
+
+                return found;
             }
             
             public static boolean toBoolean(String string)// throws Exception
