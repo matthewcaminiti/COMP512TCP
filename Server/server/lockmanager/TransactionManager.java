@@ -210,6 +210,10 @@ public class TransactionManager
     
     public LinkedList<String> getDataHistory(int transactionId, String rm){
         rm = rm.toLowerCase();
+        LinkedList<String> empty = new LinkedList<String>();
+        if(dataHistory.get(transactionId) == null){
+            return empty;
+        }
         return dataHistory.get(transactionId).get(rm);
     }
     

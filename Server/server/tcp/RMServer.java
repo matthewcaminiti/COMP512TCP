@@ -81,7 +81,6 @@ public class RMServer
                     out = new PrintWriter(System.out);
                     while((line = fbr.readLine()) != null){
                         //line will contain command
-                        //innerExecute(line, false, false);
                         
                         arguments = parse(line);
                         try{
@@ -177,7 +176,9 @@ public class RMServer
                             }
                             //line is now last operation executed
                             br.close();
-                            
+
+                            System.out.println("Upon crash recovery, determined last 2PC log: " + tcpState);
+
                             String decision = "";
                             if(lastLine.split(",")[0] == "Abort"){
                                 decision = "NO";
@@ -187,18 +188,20 @@ public class RMServer
                             decision = "YES";
                             tcpState = "madeDecision," + tcpState.split(",")[1] + "," + decision;
                             
+                            System.out.println("Made decision [" + decision + "]");
+                            
                             FileWriter tpcLog = new FileWriter(twoPCLog, true);
                             BufferedWriter bw = new BufferedWriter(tpcLog);
                             
-                            bw.write("madeDecision," + arguments.elementAt(1) + "," + decision);
+                            bw.write("madeDecision," + tcpState.split(",")[1] + "," + decision);
                             bw.newLine();
                             bw.close();
                             
                             //out.println("YES");
+                            //System.out.println("Sent decision [" + decision + "] to MW.");
                             break;
                         }
                         case "madeDecision":{
-                            
                             if(m_resourceManager.getCrashStatus() == 2){
                                 System.out.println("Resource manager server (name: " + this.s_name + ") about to crash with mode: 2");
                                 System.out.println("    - After deciding which answer to send...");
@@ -216,7 +219,8 @@ public class RMServer
                             br.close();
                             
                             out.println(lastLine.split(",")[2]); //send decision to middleware
-                            
+                            System.out.println("Sent decision [" + lastLine.split(",")[2] + "] to MW.");
+
                             FileWriter tpcLog = new FileWriter(twoPCLog, true);
                             BufferedWriter bw = new BufferedWriter(tpcLog);
                             
@@ -236,6 +240,7 @@ public class RMServer
                             }
 
                             String masterDecision = in.readLine(); //WAITS TO RECEIVE ABORT OR COMMIT FROM MIDDLEWARE
+                            System.out.println("Received decision to: " + masterDecision);
                             
                             FileReader fr = new FileReader(twoPCLog);
                             BufferedReader br = new BufferedReader(fr);
@@ -267,12 +272,14 @@ public class RMServer
                                 asd.add("Commit");
                                 asd.add(lastLine.split(",")[1]);
                                 execute(Command.Commit, asd);
+                                in2PC = false;
                             }else {
                                 //decision is to abort
                                 Vector<String> asd = new Vector<String>();
                                 asd.add("Abort");
                                 asd.add(lastLine.split(",")[1]);
                                 execute(Command.Commit, asd);
+                                in2PC = false;
                             }
                             
                             break;
@@ -294,12 +301,14 @@ public class RMServer
                                 asd.add("Commit");
                                 asd.add(lastLine.split(",")[1]);
                                 execute(Command.Commit, asd);
+                                in2PC = false;
                             }else {
                                 //decision is to abort
                                 Vector<String> asd = new Vector<String>();
                                 asd.add("Abort");
                                 asd.add(lastLine.split(",")[1]);
                                 execute(Command.Commit, asd);
+                                in2PC = false;
                             }
                             FileWriter tpcLog = new FileWriter(twoPCLog, true);
                             BufferedWriter bw = new BufferedWriter(tpcLog);
@@ -321,7 +330,7 @@ public class RMServer
                         Command cmd = Command.fromString((String)arguments.elementAt(0));
                         try{
                             execute(cmd, arguments);
-                            if(!inputLine.contains("GetData") && !inputLine.contains("Quit") && !inputLine.contains("Query")){
+                            if(!inputLine.contains("GetData") && !inputLine.contains("Quit") && !inputLine.contains("Query") && !inputLine.contains("Crash")){
                                 if(!stagedTrans.createNewFile()){
                                     //if already exists committed transaction file
                                     System.out.println("Found stagedTrans" + s_name + ".txt");
@@ -386,7 +395,8 @@ public class RMServer
                     break;
                 }
                 case CrashRMServer:{
-                    int mode = Integer.valueOf(arguments.elementAt(1).trim());
+                    int mode = Integer.parseInt(arguments.elementAt(2).trim());
+                    System.out.println("Setting CRASH MODE to: " + mode);
                     m_resourceManager.crashResourceManager(mode);
                     break;
                 }
@@ -805,7 +815,10 @@ public class RMServer
                         //succesfully renamed tempFile
                     }
                     cfbw.close();
-                    out.println("Committed: " + arguments.elementAt(1));
+                    //--------------------------------LINE OF BRICKAGE------------------------------- 
+                    // out.println("Committed: " + arguments.elementAt(1));
+                    System.out.println("Committed: " + arguments.elementAt(1));
+                    //-------------------------------------------------------------------
                     break;
                 }
                 case Abort:{
@@ -847,6 +860,7 @@ public class RMServer
                     bw.close();
                     in2PC = true;
 
+                    System.out.println("Crash mode: " + m_resourceManager.getCrashStatus());
                     if(m_resourceManager.getCrashStatus() == 1){
                         System.out.println("Resource manager server (name: " + this.s_name + ") about to crash with mode: 1");
                         System.out.println("    - After receiving vote request, but before sending answer...");
@@ -878,7 +892,7 @@ public class RMServer
                     bw.newLine();
                     bw.close();
                     
-                    System.out.println("made decision: " + decision);
+                    System.out.println("Made Decision: " + decision);
 
                     if(m_resourceManager.getCrashStatus() == 2){
                         System.out.println("Resource manager server (name: " + this.s_name + ") about to crash with mode: 2");
@@ -924,6 +938,7 @@ public class RMServer
                     Vector<String> asd = new Vector<String>();
                     asd.add(arguments.elementAt(0));
                     asd.add(arguments.elementAt(1));
+                    //EXECUTE COMMIT/ABORT
                     execute(cmdexec, asd);
 
 
