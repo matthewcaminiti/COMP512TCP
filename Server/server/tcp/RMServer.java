@@ -11,6 +11,8 @@ public class RMServer
     public ResourceManager rm;
     public String s_name;
     
+    public static String mwIP = "lab1-11.cs.mcgill.ca";
+    public static int mwPort;
     
     public static void main(String[] args) throws Exception
     {
@@ -22,6 +24,7 @@ public class RMServer
     
     public void start(int port, String name) throws Exception
     {
+        mwPort = port;
         serverSocket = new ServerSocket(port);
         while(true){
             new RMServerHandler(serverSocket.accept(), rm, name).start();
@@ -165,7 +168,7 @@ public class RMServer
                                 System.out.println("    - After receiving vote request, but before sending answer...");
                                 System.exit(1);
                             }
-
+                            
                             FileReader fr = new FileReader(committedTrans);
                             BufferedReader br = new BufferedReader(fr);
                             
@@ -176,9 +179,9 @@ public class RMServer
                             }
                             //line is now last operation executed
                             br.close();
-
+                            
                             System.out.println("Upon crash recovery, determined last 2PC log: " + tcpState);
-
+                            
                             String decision = "";
                             if(lastLine.split(",")[0] == "Abort"){
                                 decision = "NO";
@@ -207,7 +210,7 @@ public class RMServer
                                 System.out.println("    - After deciding which answer to send...");
                                 System.exit(1);
                             }
-
+                            
                             FileReader fr = new FileReader(twoPCLog);
                             BufferedReader br = new BufferedReader(fr);
                             
@@ -220,7 +223,7 @@ public class RMServer
                             
                             out.println(lastLine.split(",")[2]); //send decision to middleware
                             System.out.println("Sent decision [" + lastLine.split(",")[2] + "] to MW.");
-
+                            
                             FileWriter tpcLog = new FileWriter(twoPCLog, true);
                             BufferedWriter bw = new BufferedWriter(tpcLog);
                             
@@ -232,13 +235,18 @@ public class RMServer
                             break;
                         }
                         case "sentDecision":{
+                            
+                            mwSocket = new Socket(mwIP, mwPort);
+                            mw_out = new PrintWriter(clientSocket.getOutputStream(), true);
+                            mw_in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+
 
                             if(m_resourceManager.getCrashStatus() == 3){
                                 System.out.println("Resource manager server (name: " + this.s_name + ") about to crash with mode: 3");
                                 System.out.println("    - After sending answer...");
                                 System.exit(1);
                             }
-
+                            
                             String masterDecision = in.readLine(); //WAITS TO RECEIVE ABORT OR COMMIT FROM MIDDLEWARE
                             System.out.println("Received decision to: " + masterDecision);
                             
@@ -859,14 +867,14 @@ public class RMServer
                     bw.newLine();
                     bw.close();
                     in2PC = true;
-
+                    
                     System.out.println("Crash mode: " + m_resourceManager.getCrashStatus());
                     if(m_resourceManager.getCrashStatus() == 1){
                         System.out.println("Resource manager server (name: " + this.s_name + ") about to crash with mode: 1");
                         System.out.println("    - After receiving vote request, but before sending answer...");
                         System.exit(1);
                     }
-
+                    
                     FileReader fr = new FileReader(committedTrans);
                     BufferedReader br = new BufferedReader(fr);
                     
@@ -894,41 +902,41 @@ public class RMServer
                     bw.close();
                     
                     System.out.println("Made Decision: " + decision);
-
+                    
                     if(m_resourceManager.getCrashStatus() == 2){
                         System.out.println("Resource manager server (name: " + this.s_name + ") about to crash with mode: 2");
                         System.out.println("    - After deciding which answer to send...");
                         System.exit(1);
                     }
-
+                    
                     out.println(decision);
-
+                    
                     tpcLog = new FileWriter(twoPCLog, true);
                     bw = new BufferedWriter(tpcLog);
                     
                     bw.write("sentDecision," + arguments.elementAt(1) + "," + decision);
                     bw.newLine();
                     bw.close();
-
+                    
                     System.out.println("Sent Decision to MW: " + decision);
-
+                    
                     if(m_resourceManager.getCrashStatus() == 3){
                         System.out.println("Resource manager server (name: " + this.s_name + ") about to crash with mode: 3");
                         System.out.println("    - After sending answer...");
                         System.exit(1);
                     }
-
+                    
                     String masterDecision = in.readLine(); //waits for commit/abort
-
+                    
                     tpcLog = new FileWriter(twoPCLog, true);
                     bw = new BufferedWriter(tpcLog);
                     
                     bw.write("receivedDecision," + arguments.elementAt(1) + "," + masterDecision.split(",")[0]);
                     bw.newLine();
                     bw.close();
-
+                    
                     System.out.println("Received decision from MW");
-
+                    
                     if(m_resourceManager.getCrashStatus() == 4){
                         System.out.println("Resource manager server (name: " + this.s_name + ") about to crash with mode: 4");
                         System.out.println("    - After receiving decision but before committing/aborting...");
@@ -941,8 +949,8 @@ public class RMServer
                     asd.add(arguments.elementAt(1));
                     //EXECUTE COMMIT/ABORT
                     execute(cmdexec, asd);
-
-
+                    
+                    
                     break;
                 }
             }
