@@ -375,7 +375,7 @@ public class TransactionManager
             FileWriter fw = new FileWriter(twoPCLog, true);
             BufferedWriter bw = new BufferedWriter(fw);
             
-            bw.write("madeDecision," + xid + "," + voteBool);
+            bw.write("madeDecision," + voteBool + "," + xid);
             bw.newLine();
             bw.close();
         }catch(Exception e){

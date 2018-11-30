@@ -271,8 +271,8 @@ public class MiddlewareServer
                             //send decisions
                             Boolean decision = Boolean.parseBoolean(twoPCState.split(",")[1]);
                             if(decision){
-                                f_out.println("Commit," + twoPCState.split(",")[1]);
-                                tm.sentDecision("Flight", decision, Integer.parseInt(twoPCState.split(",")[1]));
+                                f_out.println("Commit," + twoPCState.split(",")[2]);
+                                tm.sentDecision("Flight", decision, Integer.parseInt(twoPCState.split(",")[2]));
                                 System.out.println("Sent decision: " + decision + "to Flight RM");
                                 
                                 if(tm.getCrashStatus() == 6){
@@ -280,15 +280,32 @@ public class MiddlewareServer
                                     System.exit(1);
                                 }
                                 
-                                r_out.println("Commit," + twoPCState.split(",")[1]);
-                                tm.sentDecision("Room", decision, Integer.parseInt(twoPCState.split(",")[1]));
+                                r_out.println("Commit," + twoPCState.split(",")[2]);
+                                tm.sentDecision("Room", decision, Integer.parseInt(twoPCState.split(",")[2]));
                                 System.out.println("Sent decision: " + decision + "to Room RM");
                                 
-                                c_out.println("Commit," + twoPCState.split(",")[1]);
-                                tm.sentDecision("Car", decision, Integer.parseInt(twoPCState.split(",")[1]));
+                                c_out.println("Commit," + twoPCState.split(",")[2]);
+                                tm.sentDecision("Car", decision, Integer.parseInt(twoPCState.split(",")[2]));
+                                System.out.println("Sent decision: " + decision + "to Car RM");
+                            }else{
+                                f_out.println("Abort," + twoPCState.split(",")[2]);
+                                tm.sentDecision("Flight", decision, Integer.parseInt(twoPCState.split(",")[2]));
+                                System.out.println("Sent decision: " + decision + "to Flight RM");
+                                
+                                if(tm.getCrashStatus() == 6){
+                                    System.out.println("Middleware server about to crash with mode: 6");
+                                    System.exit(1);
+                                }
+                                
+                                r_out.println("Abort," + twoPCState.split(",")[2]);
+                                tm.sentDecision("Room", decision, Integer.parseInt(twoPCState.split(",")[2]));
+                                System.out.println("Sent decision: " + decision + "to Room RM");
+                                
+                                c_out.println("Abort," + twoPCState.split(",")[2]);
+                                tm.sentDecision("Car", decision, Integer.parseInt(twoPCState.split(",")[2]));
                                 System.out.println("Sent decision: " + decision + "to Car RM");
                             }
-                            tm.allDecisionsSent(Integer.parseInt(twoPCState.split(",")[1]));
+                            tm.allDecisionsSent(Integer.parseInt(twoPCState.split(",")[2]), decision);
                             
                             if(tm.getCrashStatus() == 7){
                                 System.out.println("Middleware server about to crash with mode: 7");
