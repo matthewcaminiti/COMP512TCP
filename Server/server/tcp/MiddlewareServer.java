@@ -585,20 +585,28 @@ public class MiddlewareServer
                                             String f_resp = f_in.readLine();
                                             //----------------READLINE THROWS NULL IF LOST CONNECTION!----------------------
                                             if(f_resp == null){
-                                                while(true){
+                                                boolean timedOut = true;
+                                                Date startTime = new Date();
+                                                while(true && ((System.currentTimeMillis() - startTime.getTime()) < timeoutMs)){
                                                     try{
                                                         flightSocket = new Socket(fip, portnum);
                                                         f_out = new PrintWriter(flightSocket.getOutputStream(), true);
                                                         f_in = new BufferedReader(new InputStreamReader(flightSocket.getInputStream()));
-                                                        System.out.println("Connected to Flight Server /" + fip + ":" + portnum);
+                                                        System.out.println("Re-Connected to Flight Server /" + fip + ":" + portnum);
+                                                        timedOut = false;
                                                         break;
                                                     }catch(Exception e){
                                                         //should throw I/O when socket is closed, or not connected
                                                         System.out.println("I/O error reconnecting to Flight Server");
                                                     }
-                                                    
+                                                    Thread.sleep(500);
                                                 }
-                                                f_resp = f_in.readLine();
+                                                if(timedOut){
+                                                    f_resp = "NO";
+                                                }else{
+                                                    f_resp = f_in.readLine();
+                                                }
+                                                
                                             }
                                             tm.receivedVote("Flight", Integer.parseInt(twoPCState.split(",")[1]));
                                             //SEND SIGNAL TO FLIGHT RM
@@ -621,6 +629,30 @@ public class MiddlewareServer
                                         }
                                         if(twoPCState.contains("Room")){
                                             String r_resp = r_in.readLine();
+                                            //----------------READLINE THROWS NULL IF LOST CONNECTION!----------------------
+                                            if(r_resp == null){
+                                                boolean timedOut = true;
+                                                Date startTime = new Date();
+                                                while(true && ((System.currentTimeMillis() - startTime.getTime()) < timeoutMs)){
+                                                    try{
+                                                        roomSocket = new Socket(rip, portnum);
+                                                        r_out = new PrintWriter(flightSocket.getOutputStream(), true);
+                                                        r_in = new BufferedReader(new InputStreamReader(roomSocket.getInputStream()));
+                                                        System.out.println("Re-Connected to Room Server /" + rip + ":" + portnum);
+                                                        timedOut = false;
+                                                        break;
+                                                    }catch(Exception e){
+                                                        //should throw I/O when socket is closed, or not connected
+                                                        System.out.println("I/O error reconnecting to Room Server");
+                                                    }
+                                                    Thread.sleep(500);
+                                                }
+                                                if(timedOut){
+                                                    r_resp = "NO";
+                                                }else{
+                                                    r_resp = r_in.readLine();
+                                                }
+                                            }
                                             tm.receivedVote("Room", Integer.parseInt(twoPCState.split(",")[1]));
                                             //SEND SIGNAL TO ROOM RM
                                             System.out.println("Received Room Vote: " + r_resp);
@@ -638,6 +670,31 @@ public class MiddlewareServer
                                         }
                                         if(twoPCState.contains("Car")){
                                             String c_resp = c_in.readLine();
+                                            //----------------READLINE THROWS NULL IF LOST CONNECTION!----------------------
+                                            if(c_resp == null){
+                                                boolean timedOut = true;
+                                                Date startTime = new Date();
+                                                while(true && ((System.currentTimeMillis() - startTime.getTime()) < timeoutMs)){
+                                                    try{
+                                                        carSocket = new Socket(cip, portnum);
+                                                        c_out = new PrintWriter(flightSocket.getOutputStream(), true);
+                                                        c_in = new BufferedReader(new InputStreamReader(carSocket.getInputStream()));
+                                                        System.out.println("Re-Connected to Car Server /" + cip + ":" + portnum);
+                                                        timedOut = false;
+                                                        break;
+                                                    }catch(Exception e){
+                                                        //should throw I/O when socket is closed, or not connected
+                                                        System.out.println("I/O error reconnecting to Car Server");
+                                                    }
+                                                    Thread.sleep(500);
+                                                }
+                                                if(timedOut){
+                                                    c_resp = "NO";
+                                                }else{
+                                                    c_resp = c_in.readLine();
+                                                }
+                                                
+                                            }
                                             tm.receivedVote("Car", Integer.parseInt(twoPCState.split(",")[1]));
                                             //SEND SIGNAL TO CAR RM
                                             System.out.println("Received Car Vote: " + c_resp);
@@ -1442,7 +1499,7 @@ public class MiddlewareServer
             }
 
             public static String getTransactionStatus(int xid){
-               boolean commited = tm.isCommitted(xid);
+               boolean committed = tm.isCommitted(xid);
                boolean staged = tm.isStaged(xid);
                boolean aborted = tm.isAborted(xid);
 

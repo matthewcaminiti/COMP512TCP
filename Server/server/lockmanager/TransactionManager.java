@@ -206,6 +206,7 @@ public class TransactionManager
 
     public int getTransactionStatus(int xid){
         
+        return 0;
     }
     
     public String[] getResponseHistory(int transactionId)
@@ -429,13 +430,13 @@ public class TransactionManager
     public boolean allDecisionsSent(int xid, boolean committed){
         try{
 
-            if(commited){
+            if(committed){
                 committedXid.add(xid);
             }else{
                 abortedXid.add(xid);
             }
 
-            stagedXid = null;
+            stagedXid = -1;
 
             twoPCLog = new File("../twoPCLog.txt");
             // FileReader fr = new FileReader(twoPCLog);

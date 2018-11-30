@@ -198,7 +198,7 @@ public class RMServer
                         Vector<String> tempArgs = new Vector<String>();
                         tempArgs.add(tpcState.split(",")[2]);
                         tempArgs.add(tpcState.split(",")[1]);
-                        execute(Command.Commit, tempArgs);
+                        execute(Command.Abort, tempArgs);
                     }else{
                         //no commit/abort record
 
@@ -211,177 +211,7 @@ public class RMServer
                 }
                 
                 
-                while(in2PC){
-                    switch(tpcState.split(",")[0]){
-                        case "receivedVoteReq":{
-
-                            if(m_resourceManager.getCrashStatus() == 1){
-                                System.out.println("Resource manager server (name: " + this.s_name + ") about to crash with mode: 1");
-                                System.out.println("    - After receiving vote request, but before sending answer...");
-                                System.exit(1);
-                            }
-                            
-                            FileReader fr = new FileReader(committedTrans);
-                            BufferedReader br = new BufferedReader(fr);
-                            
-                            String line = "";
-                            String lastLine = "";
-                            while((line = br.readLine()) != null){
-                                lastLine = line;
-                            }
-                            //line is now last operation executed
-                            br.close();
-                            
-                            System.out.println("Upon crash recovery, determined last 2PC log: " + tpcState);
-                            
-                            String decision = "";
-                            if(lastLine.split(",")[0] == "Abort"){
-                                decision = "NO";
-                                //out.println("NO");
-                            }
-                            in2PC = true;
-                            decision = "YES";
-                            tpcState = "madeDecision," + tpcState.split(",")[1] + "," + decision;
-                            
-                            System.out.println("Made decision [" + decision + "]");
-                            
-                            FileWriter tpcLog = new FileWriter(twoPCLog, true);
-                            BufferedWriter bw = new BufferedWriter(tpcLog);
-                            
-                            bw.write("madeDecision," + tpcState.split(",")[1] + "," + decision);
-                            bw.newLine();
-                            bw.close();
-                            
-                            //out.println("YES");
-                            //System.out.println("Sent decision [" + decision + "] to MW.");
-                            break;
-                        }
-                        case "madeDecision":{
-                            if(m_resourceManager.getCrashStatus() == 2){
-                                System.out.println("Resource manager server (name: " + this.s_name + ") about to crash with mode: 2");
-                                System.out.println("    - After deciding which answer to send...");
-                                System.exit(1);
-                            }
-                            
-                            FileReader fr = new FileReader(twoPCLog);
-                            BufferedReader br = new BufferedReader(fr);
-                            
-                            String line = "";
-                            String lastLine = "";
-                            while((line = br.readLine()) != null){
-                                lastLine = line;
-                            }
-                            br.close();
-                            
-                            out.println(lastLine.split(",")[2]); //send decision to middleware
-                            System.out.println("Sent decision [" + lastLine.split(",")[2] + "] to MW.");
-                            
-                            FileWriter tpcLog = new FileWriter(twoPCLog, true);
-                            BufferedWriter bw = new BufferedWriter(tpcLog);
-                            
-                            bw.write("sentDecision," + lastLine.split(",")[1] + "," + lastLine.split(",")[2]);
-                            bw.newLine();
-                            tpcState = "sentDecision," + lastLine.split(",")[1] + "," + lastLine.split(",")[2];
-                            bw.close();
-                            
-                            break;
-                        }
-                        case "sentDecision":{
-                            
-                            // mwSocket = new Socket(mwIP, mwPort);
-                            // mw_out = new PrintWriter(clientSocket.getOutputStream(), true);
-                            // mw_in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-                            
-                            
-                            if(m_resourceManager.getCrashStatus() == 3){
-                                System.out.println("Resource manager server (name: " + this.s_name + ") about to crash with mode: 3");
-                                System.out.println("    - After sending answer...");
-                                System.exit(1);
-                            }
-                            
-                            String masterDecision = in.readLine(); //WAITS TO RECEIVE ABORT OR COMMIT FROM MIDDLEWARE
-                            System.out.println("Received decision to: " + masterDecision);
-                            
-                            FileReader fr = new FileReader(twoPCLog);
-                            BufferedReader br = new BufferedReader(fr);
-                            
-                            String line = "";
-                            String lastLine = "";
-                            while((line = br.readLine()) != null){
-                                lastLine = line;
-                            }
-                            br.close();
-                            
-                            FileWriter tpcLog = new FileWriter(twoPCLog, true);
-                            BufferedWriter bw = new BufferedWriter(tpcLog);
-                            
-                            bw.write("receivedDecision," + lastLine.split(",")[1] + "," + masterDecision);
-                            bw.newLine();
-                            tpcState = "receivedDecision," + lastLine.split(",")[1] + "," + masterDecision;
-                            bw.close();
-                            
-                            if(m_resourceManager.getCrashStatus() == 4){
-                                System.out.println("Resource manager server (name: " + this.s_name + ") about to crash with mode: 4");
-                                System.out.println("    - After receiving decision but before committing/aborting...");
-                                System.exit(1);
-                            }
-                            
-                            if(masterDecision.split(",")[0].equals("Commit")){
-                                //decision is to commit
-                                Vector<String> asd = new Vector<String>();
-                                asd.add("Commit");
-                                asd.add(lastLine.split(",")[1]);
-                                execute(Command.Commit, asd);
-                                in2PC = false;
-                            }else {
-                                //decision is to abort
-                                Vector<String> asd = new Vector<String>();
-                                asd.add("Abort");
-                                asd.add(lastLine.split(",")[1]);
-                                execute(Command.Commit, asd);
-                                in2PC = false;
-                            }
-                            
-                            break;
-                        }
-                        case "receivedDecision":{
-                            FileReader fr = new FileReader(twoPCLog);
-                            BufferedReader br = new BufferedReader(fr);
-                            
-                            String line = "";
-                            String lastLine = "";
-                            while((line = br.readLine()) != null){
-                                lastLine = line;
-                            }
-                            br.close();
-                            
-                            if(lastLine.split(",")[2].equals("Commit")){
-                                //decision is to commit
-                                Vector<String> asd = new Vector<String>();
-                                asd.add("Commit");
-                                asd.add(lastLine.split(",")[1]);
-                                execute(Command.Commit, asd);
-                                in2PC = false;
-                            }else {
-                                //decision is to abort
-                                Vector<String> asd = new Vector<String>();
-                                asd.add("Abort");
-                                asd.add(lastLine.split(",")[1]);
-                                execute(Command.Commit, asd);
-                                in2PC = false;
-                            }
-                            FileWriter tpcLog = new FileWriter(twoPCLog, true);
-                            BufferedWriter bw = new BufferedWriter(tpcLog);
-                            
-                            bw.write("none");
-                            bw.newLine();
-                            tpcState = "none";
-                            bw.close();
-                            
-                            break;
-                        }
-                    }
-                }
+                
                 System.out.println("Waiting for input from MW...");
                 while((inputLine = in.readLine()) != null){ 
                     //CLIENT COMMAND HANDLING
@@ -981,7 +811,7 @@ public class RMServer
                         System.exit(1);
                     }
                     
-                    String masterDecision = in.readLine(); //waits for commit/abort
+                    String masterDecision = in.readLine(); //waits for commit/abort -- Commit,xid
                     
                     
                     tpcLog = new FileWriter(twoPCLog, true);
