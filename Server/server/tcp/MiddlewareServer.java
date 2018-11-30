@@ -306,6 +306,21 @@ public class MiddlewareServer
                         String resp_c = "";
                         String resp_r = "";
                         Command cmd = Command.fromString((String)arguments.elementAt(0));
+                        
+                        if(isStarted && !cmd.equals(Command.Shutdown) && !cmd.equals(Command.Timeout) && !cmd.equals(Command.CrashRM)){
+                            if(cmd.equals(Command.Commit) && arguments.size() == 1){
+                                out.println("Please enter XID to commit");
+                                continue;
+                            }
+                            if(to.getXId() != Integer.parseInt(arguments.elementAt(1))){
+                                //xid does NOT exist!
+                                out.println("xid does NOT exist!");
+                                continue;
+                            }
+                        }else if(!isStarted && !cmd.equals(Command.Start) && !cmd.equals(Command.Shutdown) && !cmd.equals(Command.CrashRM)){
+                            out.println("Need to start a transaction (Start)");
+                            continue;
+                        }
                         if(!inputLine.contains("GetData") && !inputLine.contains("Quit") && !inputLine.contains("Query") && !inputLine.contains("Crash")){
                             BufferedWriter sfbw = null;
                             if(!stagedTrans.createNewFile()){
@@ -333,20 +348,6 @@ public class MiddlewareServer
                             sfbw.close();
                             System.out.println("Wrote to stagedTrans and closed");
                         }
-                        if(isStarted && !cmd.equals(Command.Shutdown) && !cmd.equals(Command.Timeout) && !cmd.equals(Command.CrashRM)){
-                            if(cmd.equals(Command.Commit) && arguments.size() == 1){
-                                out.println("Please enter XID to commit");
-                                continue;
-                            }
-                            if(to.getXId() != Integer.parseInt(arguments.elementAt(1))){
-                                //xid does NOT exist!
-                                out.println("xid does NOT exist!");
-                                continue;
-                            }
-                        }else if(!isStarted && !cmd.equals(Command.Start) && !cmd.equals(Command.Shutdown) && !cmd.equals(Command.CrashRM)){
-                            out.println("Need to start a transaction (Start)");
-                            continue;
-                        }
                         switch(cmd){
                             // case Help:
                             // {
@@ -356,6 +357,7 @@ public class MiddlewareServer
                                 //NEED WRITE LOCK FOR FLIGHT
                                 lm.Lock(to.getXId(), "FLIGHT", TransactionLockObject.LockType.LOCK_WRITE);
                                 tm.newOperation(to.getXId(), "FLIGHT", inputLine);
+                                System.out.println("trying to inner execute addFlight...");
                                 tm.newResponse(to.getXId(), innerExecute(inputLine, true, true));
                                 // out.println("Flight Added");
                                 break;
@@ -1041,7 +1043,9 @@ public class MiddlewareServer
                 String ret = "";
                 outStream.println("GetData," + xid + "," +  objType + "," +  objId);
                 try{
+                    System.out.println("trying to receive GetData...");
                     ret = inStream.readLine();
+                    System.out.println("received data from RM...");
                 }catch (Exception e){
                     //TODO: handle IOException
                 }
@@ -1064,7 +1068,9 @@ public class MiddlewareServer
                             
                             // }
                             case AddFlight:
+                            System.out.println("Entered addFlight in innerExecute...");
                             if(logInTM) tm.newData(xID, "FLIGHT", getPreviousData(f_out, f_in, "FLIGHT", xID, arguments.elementAt(2)));
+                            System.out.println("sending addlfight to Flight RM...");
                             f_out.println(inputLine);
                             resp = f_in.readLine();
                             ret = resp;

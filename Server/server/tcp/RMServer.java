@@ -147,6 +147,7 @@ public class RMServer
                                 e.printStackTrace();
                             }
                         }
+                        out = old_out;
                         arguments = new Vector<String>();
                         //Committed Transaction file will contain each transaction in chronological order (of commits)
                         // CT file will not have Transaction ID except for within Commands
@@ -182,6 +183,7 @@ public class RMServer
                 
                 //---------------------- ON REBOOT: BEFORE ENTERING 2PC -> ASK COORDINATOR WHAT'S UP -----------
                 if(in2PC){
+                    System.out.println("Detected that server was in 2PC");
                     Socket mwSocket = new Socket(mwIP, mwPort);
                     PrintWriter mw_out = new PrintWriter(clientSocket.getOutputStream(), true);
                     BufferedReader mw_in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
@@ -199,7 +201,7 @@ public class RMServer
                         execute(Command.Commit, tempArgs);
                     }else{
                         //no commit/abort record
-
+                        
                         //------- MESSAGE MW TO FIND TRANSACTION STATUS -----
 
                         // ---------------------------------------------------
@@ -379,7 +381,7 @@ public class RMServer
                         }
                     }
                 }
-                
+                System.out.println("Waiting for input from MW...");
                 while((inputLine = in.readLine()) != null){ 
                     //CLIENT COMMAND HANDLING
                     arguments = parse(inputLine);
@@ -828,6 +830,7 @@ public class RMServer
                     break;
                 }
                 case GetData:{
+                    System.out.println("Reached getDATA...");
                     out.println(m_resourceManager.getObjectData(Integer.parseInt(arguments.elementAt(1)), arguments.elementAt(2), arguments.elementAt(3)));
                     break;
                 }
