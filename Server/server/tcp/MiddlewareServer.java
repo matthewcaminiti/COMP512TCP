@@ -645,6 +645,7 @@ public class MiddlewareServer
                                             }
                                         }
                                     }
+
                                     //---- RECEIVED ALL . GOING TO MAKE DECISION
                                     twoPCState = tm.getMiddlewareState();
                                     System.out.println(twoPCState);
@@ -654,13 +655,14 @@ public class MiddlewareServer
                                         System.out.println("Middleware server about to crash with mode: 5");
                                         System.exit(1);
                                     }
+
                                     //---- MADE DECISION . GOING TO SEND DECISION
                                     twoPCState = tm.getMiddlewareState();
                                     System.out.println(twoPCState);
-                                    Boolean decision = Boolean.parseBoolean(twoPCState.split(",")[1]);
+                                    Boolean decision = Boolean.parseBoolean(twoPCState.split(",")[2]);
                                     if(decision){
-                                        f_out.println("Commit," + twoPCState.split(",")[2]);
-                                        tm.sentDecision("Flight", decision, Integer.parseInt(twoPCState.split(",")[2]));
+                                        f_out.println("Commit," + twoPCState.split(",")[1]);
+                                        tm.sentDecision("Flight", decision, Integer.parseInt(twoPCState.split(",")[1]));
                                         System.out.println("Sent decision to Flight RM");
                                         
                                         if(tm.getCrashStatus() == 6){
@@ -668,12 +670,29 @@ public class MiddlewareServer
                                             System.exit(1);
                                         }
                                         
-                                        r_out.println("Commit," + twoPCState.split(",")[2]);
-                                        tm.sentDecision("Room", decision, Integer.parseInt(twoPCState.split(",")[2]));
+                                        r_out.println("Commit," + twoPCState.split(",")[1]);
+                                        tm.sentDecision("Room", decision, Integer.parseInt(twoPCState.split(",")[1]));
                                         System.out.println("Sent decision to Room RM");
                                         
-                                        c_out.println("Commit," + twoPCState.split(",")[2]);
-                                        tm.sentDecision("Car", decision, Integer.parseInt(twoPCState.split(",")[2]));
+                                        c_out.println("Commit," + twoPCState.split(",")[1]);
+                                        tm.sentDecision("Car", decision, Integer.parseInt(twoPCState.split(",")[1]));
+                                        System.out.println("Sent decision to Car RM");
+                                    }else{
+                                        f_out.println("Abort," + twoPCState.split(",")[1]);
+                                        tm.sentDecision("Flight", decision, Integer.parseInt(twoPCState.split(",")[1]));
+                                        System.out.println("Sent decision to Flight RM");
+                                        
+                                        if(tm.getCrashStatus() == 6){
+                                            System.out.println("Middleware server about to crash with mode: 6");
+                                            System.exit(1);
+                                        }
+                                        
+                                        r_out.println("Abort," + twoPCState.split(",")[1]);
+                                        tm.sentDecision("Room", decision, Integer.parseInt(twoPCState.split(",")[1]));
+                                        System.out.println("Sent decision to Room RM");
+                                        
+                                        c_out.println("Abort," + twoPCState.split(",")[1]);
+                                        tm.sentDecision("Car", decision, Integer.parseInt(twoPCState.split(",")[1]));
                                         System.out.println("Sent decision to Car RM");
                                     }
                                     
@@ -683,13 +702,15 @@ public class MiddlewareServer
                                     }
                                     //---- DECISIONS SENT
                                     
-                                    tm.allDecisionsSent(Integer.parseInt(twoPCState.split(",")[2]));
+                                    tm.allDecisionsSent(Integer.parseInt(twoPCState.split(",")[1]), decision);
                                     isStarted = false;
-                                    System.out.println("Committed transaction [" + twoPCState.split(",")[2] + "]");
+                                    System.out.println("Committed transaction [" + twoPCState.split(",")[1] + "]");
                                     //WHEN TELLING OTHER RM'S TO COMMIT:  innerExecute(inputLine, false, false);
                                     out.println("Commited transaction [" + to.getXId() + "]");
-                                    break;
+                                    
+                                    break; 
                                 }
+
                                 case Abort:
                                 {
                                     //tm.commit(to.getXId());
@@ -800,10 +821,15 @@ public class MiddlewareServer
                                             break;
                                         }
                                     }
+
                                     lm.UnlockAll(to.getXId());
                                     innerExecute(inputLine, false, false);
+
+                                    
+
                                     break;
                                 }
+
                                 case Timeout:
                                 {
                                     //tm.commit(to.getXId());
@@ -1302,6 +1328,7 @@ public class MiddlewareServer
                                 if(showPrints) out.println("Committed transaction ID: " + arguments.elementAt(1));
                                 break;
                             }
+
                             case Abort:{
                                 f_out.println(inputLine);
                                 String fresp = f_in.readLine();
@@ -1312,6 +1339,7 @@ public class MiddlewareServer
                                 if(showPrints) out.println("Aborted transaction ID: " + arguments.elementAt(1));
                                 break;
                             }
+
                             case QueryTransaction:{
 
                                 int xid = Integer.valueOf(arguments.elementAt(1).trim());
@@ -1332,7 +1360,9 @@ public class MiddlewareServer
                                     break;
                                 }
 
+                                String status = getTransactionStatus(xid);
 
+                                out.println(status + "," + xid);
                                 break;
                             }
                             default:
@@ -1377,46 +1407,20 @@ public class MiddlewareServer
                 return (new Integer(string)).intValue();
             }
 
-            public static boolean transactionCommitted(int xid){
-                String xid_str = String.valueOf(xid);
-                boolean found = false;
+            public static String getTransactionStatus(int xid){
+               boolean commited = tm.isCommitted(xid);
+               boolean staged = tm.isStaged(xid);
+               boolean aborted = tm.isAborted(xid);
 
-                File committed = new File("../committedTransMW.txt");
-                FileReader fr = new FileReader(committed);
-                BufferedReader fbr = new BufferedReader(fr);
-                
-                String cmd = "";
-                while((cmd = fbr.readLine()) != null){
-                    String[] args = cmd.split(",");
-                    found_xid = args[1];
-                    if(found_xid.equals(xid_str)){
-                        found = true;
-                        break;
-                    }
-                }
+               if(committed && !staged && !aborted){
+                    return "Committed";
+               }else if(!committed && staged && !aborted){
+                    return "Staged";
+               }else if(!committed && !staged && aborted){
+                    return "Aborted";
+               }
 
-                return found;
-            }
-
-            public static boolean transactionStaged(int xid){
-                String xid_str = String.valueOf(xid);
-                boolean found = false;
-
-                File staged = new File("../twoPCLog.txt");
-                FileReader fr = new FileReader(staged);
-                BufferedReader fbr = new BufferedReader(fr);
-
-                String cmd = "";
-                while((cmd = fbr.readLine()) != null){
-                    String[] args = cmd.split(",");
-                    found_xid = args[1];
-                    if(found_xid.equals(xid_str)){
-                        found = true;
-                        break;
-                    }
-                }
-
-                return found;
+               return "Error";
             }
             
             public static boolean toBoolean(String string)// throws Exception
