@@ -32,7 +32,10 @@ public class TransactionManager
     
     //keep track of which RM's are involved in a transaction
     private HashMap<Integer,LinkedList<String>> rmNeeded; //key-value, key being xid, values being linkedlist of needed RM's
-    
+
+    private LinkedList<Integer> committedXid;
+    private LinkedList<Integer> abortedXid;
+    private int stagedXid;
     
     private File twoPCLog = null;
     
@@ -50,6 +53,8 @@ public class TransactionManager
         operationHistory = new HashMap<Integer, LinkedList<String>>();
         responseHistory = new HashMap<Integer, LinkedList<String>>();
         dataHistory = new HashMap<Integer, HashMap<String, LinkedList<String>>>();
+        committedXid = new LinkedList<Integer>();
+        abortedXid = new LinkedList<Integer>();
     }
     
     public TransactionObject start() throws RemoteException 
@@ -198,6 +203,10 @@ public class TransactionManager
         }
         return temp;
     }
+
+    public int getTransactionStatus(int xid){
+        
+    }
     
     public String[] getResponseHistory(int transactionId)
     {
@@ -226,6 +235,7 @@ public class TransactionManager
     
     public void begin2PC(int xid){
         try{
+            stagedXid = xid;
             twoPCLog = new File("../twoPCLog.txt");
             twoPCLog.createNewFile();
             FileWriter fw = new FileWriter(twoPCLog, true);
@@ -373,6 +383,32 @@ public class TransactionManager
         }
         return Boolean.parseBoolean(voteBool);
     }
+
+    public void addAbortedXid(int xid){
+        abortedXid.add(xid);
+        return;
+    }
+
+    public void addCommittedXid(int xid){
+        committedXid.add(xid);
+        return;
+    }
+
+    public int getStagedXid(){
+        return stagedXid;
+    }
+
+    public boolean isCommitted(int xid){
+        return committedXid.contains(xid);
+    }
+
+    public boolean isAborted(int xid){
+        return abortedXid.contains(xid);
+    }
+
+    public boolean isStaged(int xid){
+        return (xid == stagedXid);
+    }
     
     public boolean sentDecision(String rm, Boolean decision, int xid){
         try{
@@ -390,8 +426,17 @@ public class TransactionManager
         
     }
     
-    public boolean allDecisionsSent(int xid){
+    public boolean allDecisionsSent(int xid, boolean committed){
         try{
+
+            if(commited){
+                committedXid.add(xid);
+            }else{
+                abortedXid.add(xid);
+            }
+
+            stagedXid = null;
+
             twoPCLog = new File("../twoPCLog.txt");
             // FileReader fr = new FileReader(twoPCLog);
             // BufferedReader br = new BufferedReader(fr);

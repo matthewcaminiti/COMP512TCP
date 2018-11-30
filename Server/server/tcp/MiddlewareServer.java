@@ -45,6 +45,7 @@ public class MiddlewareServer
     
     private static File committedTrans = null;
     private static File stagedTrans = null;
+
     public static void main(String[] args) throws Exception
     {
         //args[0] = flight ip
@@ -121,7 +122,7 @@ public class MiddlewareServer
                     //if already exists committed transaction file
                     System.out.println("Found committedTransMW.txt");
                     FileReader fr = new FileReader(committedTrans);
-                    //Committed Transaction file will contain each transaction in chronological order (of commits)
+                    // Committed Transaction file will contain each transaction in chronological order (of commits)
                     // CT file will not have Transaction ID except for withing Commands
                     BufferedReader fbr = new BufferedReader(fr);
                     String line;
@@ -188,6 +189,7 @@ public class MiddlewareServer
                                 System.out.println("Middleware server about to crash with mode: 1");
                                 System.exit(1);
                             }
+
                             f_out.println("Prepare," + twoPCState.split(",")[1]);
                             c_out.println("Prepare," + twoPCState.split(",")[1]);
                             r_out.println("Prepare," + twoPCState.split(",")[1]);
@@ -269,8 +271,8 @@ public class MiddlewareServer
                             //send decisions
                             Boolean decision = Boolean.parseBoolean(twoPCState.split(",")[1]);
                             if(decision){
-                                f_out.println("Commit," + twoPCState.split(",")[1]);
-                                tm.sentDecision("Flight", decision, Integer.parseInt(twoPCState.split(",")[1]));
+                                f_out.println("Commit," + twoPCState.split(",")[2]);
+                                tm.sentDecision("Flight", decision, Integer.parseInt(twoPCState.split(",")[2]));
                                 System.out.println("Sent decision: " + decision + "to Flight RM");
                                 
                                 if(tm.getCrashStatus() == 6){
@@ -278,15 +280,32 @@ public class MiddlewareServer
                                     System.exit(1);
                                 }
                                 
-                                r_out.println("Commit," + twoPCState.split(",")[1]);
-                                tm.sentDecision("Room", decision, Integer.parseInt(twoPCState.split(",")[1]));
+                                r_out.println("Commit," + twoPCState.split(",")[2]);
+                                tm.sentDecision("Room", decision, Integer.parseInt(twoPCState.split(",")[2]));
                                 System.out.println("Sent decision: " + decision + "to Room RM");
                                 
-                                c_out.println("Commit," + twoPCState.split(",")[1]);
-                                tm.sentDecision("Car", decision, Integer.parseInt(twoPCState.split(",")[1]));
+                                c_out.println("Commit," + twoPCState.split(",")[2]);
+                                tm.sentDecision("Car", decision, Integer.parseInt(twoPCState.split(",")[2]));
+                                System.out.println("Sent decision: " + decision + "to Car RM");
+                            }else{
+                                f_out.println("Abort," + twoPCState.split(",")[2]);
+                                tm.sentDecision("Flight", decision, Integer.parseInt(twoPCState.split(",")[2]));
+                                System.out.println("Sent decision: " + decision + "to Flight RM");
+                                
+                                if(tm.getCrashStatus() == 6){
+                                    System.out.println("Middleware server about to crash with mode: 6");
+                                    System.exit(1);
+                                }
+                                
+                                r_out.println("Abort," + twoPCState.split(",")[2]);
+                                tm.sentDecision("Room", decision, Integer.parseInt(twoPCState.split(",")[2]));
+                                System.out.println("Sent decision: " + decision + "to Room RM");
+                                
+                                c_out.println("Abort," + twoPCState.split(",")[2]);
+                                tm.sentDecision("Car", decision, Integer.parseInt(twoPCState.split(",")[2]));
                                 System.out.println("Sent decision: " + decision + "to Car RM");
                             }
-                            tm.allDecisionsSent(Integer.parseInt(twoPCState.split(",")[1]));
+                            tm.allDecisionsSent(Integer.parseInt(twoPCState.split(",")[2]), decision);
                             
                             if(tm.getCrashStatus() == 7){
                                 System.out.println("Middleware server about to crash with mode: 7");
@@ -645,6 +664,7 @@ public class MiddlewareServer
                                             }
                                         }
                                     }
+
                                     //---- RECEIVED ALL . GOING TO MAKE DECISION
                                     twoPCState = tm.getMiddlewareState();
                                     System.out.println(twoPCState);
@@ -654,13 +674,14 @@ public class MiddlewareServer
                                         System.out.println("Middleware server about to crash with mode: 5");
                                         System.exit(1);
                                     }
+
                                     //---- MADE DECISION . GOING TO SEND DECISION
                                     twoPCState = tm.getMiddlewareState();
                                     System.out.println(twoPCState);
-                                    Boolean decision = Boolean.parseBoolean(twoPCState.split(",")[1]);
+                                    Boolean decision = Boolean.parseBoolean(twoPCState.split(",")[2]);
                                     if(decision){
-                                        f_out.println("Commit," + twoPCState.split(",")[2]);
-                                        tm.sentDecision("Flight", decision, Integer.parseInt(twoPCState.split(",")[2]));
+                                        f_out.println("Commit," + twoPCState.split(",")[1]);
+                                        tm.sentDecision("Flight", decision, Integer.parseInt(twoPCState.split(",")[1]));
                                         System.out.println("Sent decision to Flight RM");
                                         
                                         if(tm.getCrashStatus() == 6){
@@ -668,12 +689,29 @@ public class MiddlewareServer
                                             System.exit(1);
                                         }
                                         
-                                        r_out.println("Commit," + twoPCState.split(",")[2]);
-                                        tm.sentDecision("Room", decision, Integer.parseInt(twoPCState.split(",")[2]));
+                                        r_out.println("Commit," + twoPCState.split(",")[1]);
+                                        tm.sentDecision("Room", decision, Integer.parseInt(twoPCState.split(",")[1]));
                                         System.out.println("Sent decision to Room RM");
                                         
-                                        c_out.println("Commit," + twoPCState.split(",")[2]);
-                                        tm.sentDecision("Car", decision, Integer.parseInt(twoPCState.split(",")[2]));
+                                        c_out.println("Commit," + twoPCState.split(",")[1]);
+                                        tm.sentDecision("Car", decision, Integer.parseInt(twoPCState.split(",")[1]));
+                                        System.out.println("Sent decision to Car RM");
+                                    }else{
+                                        f_out.println("Abort," + twoPCState.split(",")[1]);
+                                        tm.sentDecision("Flight", decision, Integer.parseInt(twoPCState.split(",")[1]));
+                                        System.out.println("Sent decision to Flight RM");
+                                        
+                                        if(tm.getCrashStatus() == 6){
+                                            System.out.println("Middleware server about to crash with mode: 6");
+                                            System.exit(1);
+                                        }
+                                        
+                                        r_out.println("Abort," + twoPCState.split(",")[1]);
+                                        tm.sentDecision("Room", decision, Integer.parseInt(twoPCState.split(",")[1]));
+                                        System.out.println("Sent decision to Room RM");
+                                        
+                                        c_out.println("Abort," + twoPCState.split(",")[1]);
+                                        tm.sentDecision("Car", decision, Integer.parseInt(twoPCState.split(",")[1]));
                                         System.out.println("Sent decision to Car RM");
                                     }
                                     
@@ -683,13 +721,15 @@ public class MiddlewareServer
                                     }
                                     //---- DECISIONS SENT
                                     
-                                    tm.allDecisionsSent(Integer.parseInt(twoPCState.split(",")[2]));
+                                    tm.allDecisionsSent(Integer.parseInt(twoPCState.split(",")[1]), decision);
                                     isStarted = false;
-                                    System.out.println("Committed transaction [" + twoPCState.split(",")[2] + "]");
+                                    System.out.println("Committed transaction [" + twoPCState.split(",")[1] + "]");
                                     //WHEN TELLING OTHER RM'S TO COMMIT:  innerExecute(inputLine, false, false);
                                     out.println("Commited transaction [" + to.getXId() + "]");
-                                    break;
+                                    
+                                    break; 
                                 }
+
                                 case Abort:
                                 {
                                     //tm.commit(to.getXId());
@@ -800,10 +840,15 @@ public class MiddlewareServer
                                             break;
                                         }
                                     }
+
                                     lm.UnlockAll(to.getXId());
                                     innerExecute(inputLine, false, false);
+
+                                    
+
                                     break;
                                 }
+
                                 case Timeout:
                                 {
                                     //tm.commit(to.getXId());
@@ -861,7 +906,7 @@ public class MiddlewareServer
                                             case DeleteRooms:{
                                                 String addRooms = roomDataHistory.removeLast();
                                                 String[] argumentz = addRooms.split(",");
-                                                innerExecute("AddRoomss," + to.getXId() + "," + argumentz[3] + "," + argumentz[2] + "," + argumentz[4], false, true);
+                                                innerExecute("AddRooms," + to.getXId() + "," + argumentz[3] + "," + argumentz[2] + "," + argumentz[4], false, true);
                                                 break;
                                             }
                                             case DeleteCustomer:{
@@ -1317,6 +1362,7 @@ public class MiddlewareServer
                                 if(showPrints) out.println("Committed transaction ID: " + arguments.elementAt(1));
                                 break;
                             }
+
                             case Abort:{
                                 f_out.println(inputLine);
                                 String fresp = f_in.readLine();
@@ -1325,6 +1371,32 @@ public class MiddlewareServer
                                 r_out.println(inputLine);
                                 String rresp = r_in.readLine();
                                 if(showPrints) out.println("Aborted transaction ID: " + arguments.elementAt(1));
+                                break;
+                            }
+
+                            case QueryTransaction:{
+
+                                int xid = Integer.valueOf(arguments.elementAt(1).trim());
+                                String server = arguments.elementAt(2).trim();
+                                PrintWriter out;
+                                if(server.equals("Flight")){
+                                    out = f_out;
+                                }else if(server.equals("Car")){
+                                    out = c_out;
+                                }else if(server.equals("Room")){
+                                    out = r_out;
+                                }else{
+                                    break;
+                                }
+                                
+                                if(!tm.transactionExist(xid)){
+                                    out.println("Transaction with xid " + xid + "does not exist");
+                                    break;
+                                }
+
+                                String status = getTransactionStatus(xid);
+
+                                out.println(status + "," + xid);
                                 break;
                             }
                             default:
@@ -1367,6 +1439,22 @@ public class MiddlewareServer
             public static int toInt(String string) throws NumberFormatException
             {
                 return (new Integer(string)).intValue();
+            }
+
+            public static String getTransactionStatus(int xid){
+               boolean commited = tm.isCommitted(xid);
+               boolean staged = tm.isStaged(xid);
+               boolean aborted = tm.isAborted(xid);
+
+               if(committed && !staged && !aborted){
+                    return "Committed";
+               }else if(!committed && staged && !aborted){
+                    return "Staged";
+               }else if(!committed && !staged && aborted){
+                    return "Aborted";
+               }
+
+               return "Error";
             }
             
             public static boolean toBoolean(String string)// throws Exception
