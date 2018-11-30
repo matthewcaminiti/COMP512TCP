@@ -261,7 +261,7 @@ public class TransactionManager
                 bw.close();
                 return "none";
             }else{
-                System.out.println("Found twoPCLog.txt when trying to get MW 2PC state.");
+                //System.out.println("Found twoPCLog.txt when trying to get MW 2PC state.");
                 FileReader fr = new FileReader(twoPCLog);
                 BufferedReader br = new BufferedReader(fr);
                 String line = "";

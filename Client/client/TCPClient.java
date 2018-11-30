@@ -60,11 +60,13 @@ public class TCPClient
             System.out.print((char)27 + "[32;1m\n>] " + (char)27 + "[0m");
             String input;
 
+            client.transStarted = true;
+
             if(client.transStarted){
                 Future<String> awaitingInput = client.readExecutor.submit(client.waitForInput);
                 try{
                     input = awaitingInput.get(1, TimeUnit.MINUTES);
-                    if(input == "Shutdown") System.exit(0);
+                    //if(input == "Shutdown") System.exit(0);
                 }catch (Exception e){
                     input = "Timeout";
                     client.transStarted = false;

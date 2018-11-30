@@ -150,15 +150,9 @@ public class RMServer
                         }
                         out = old_out;
                         arguments = new Vector<String>();
-                        //Committed Transaction file will contain each transaction in chronological order (of commits)
-                        // CT file will not have Transaction ID except for within Commands
-                        // Should be able to safely re-execute each command
-                        //sfbw = new BufferedWriter(fw);
                     }else{
                         //created new staged trans
                         System.out.println("Created new stagedTrans" + s_name + ".txt");
-                        //FileWriter fw = new FileWriter(stagedTrans, true);
-                        //sfbw = new BufferedWriter(fw);
                     }
                 }catch(Exception e){
                     System.out.println("Error when accessing stagedTrans. : ");
@@ -176,6 +170,14 @@ public class RMServer
                     while((line = br.readLine()) != null){
                         lastLine = line;
                     }
+                    tpcState = lastLine;
+
+                    if(tpcState != "none" && tpcState.length() > 3) {
+                        in2PC = true;
+                        //out.println("PING");
+                    }
+
+                    System.out.println("On reboot, found last 2PC state was: " + tpcState);
                     
                     Vector<String> logArgs = parse(lastLine);
                     commandArgs.add(logArgs.elementAt(2));
@@ -186,6 +188,7 @@ public class RMServer
                     }else if(lastLine.contains("Abort")){
                         execute(Command.Abort, commandArgs);
                     }else{
+                        System.out.println("setting checkWithMiddleWare flag");
                         checkWithMiddleware = true;
                     }
 
@@ -194,79 +197,318 @@ public class RMServer
                 }
                 
                 //---------------------- ON REBOOT: BEFORE ENTERING 2PC -> ASK COORDINATOR WHAT'S UP -----------
-                if(checkWithMiddleware){
-                    System.out.println("Transaction state unknown when server crashed - ask Middleware");
-                    Socket mwSocket = new Socket(mwIP, mwPort);
-                    PrintWriter mw_out = new PrintWriter(clientSocket.getOutputStream(), true);
-                    BufferedReader mw_in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+                // if(checkWithMiddleware){
+                //     System.out.println("Transaction state unknown when server crashed - ask Middleware");
+                //     Socket mwSocket = new Socket(mwIP, mwPort);
+                //     PrintWriter mw_out = new PrintWriter(clientSocket.getOutputStream(), true);
+                //     BufferedReader mw_in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
                     
-                        //no commit/abort record
+                //         //no commit/abort record
 
-                        //------- MESSAGE MW TO FIND TRANSACTION STATUS -----
-                        mw_out.println("QueryTransaction," + tpcState.split(",")[1] + "," + s_name);
-                        String resp = mw_in.readLine();
+                //         //------- MESSAGE MW TO FIND TRANSACTION STATUS -----
+                //         mw_out.println("QueryTransaction," + tpcState.split(",")[1] + "," + s_name);
+                //         String resp = mw_in.readLine();
 
-                        if(resp.equals("Committed")){
-                            execute(Command.Commit, commandArgs);
-                        }else if (resp.equals("Aborted")){
-                            execute(Command.Abort, commandArgs);
-                        }else if (resp.equals("Staged")){
-                            execute(Command.Prepare, commandArgs);
-                        }else{
-                            System.out.println("Transaction "+tpcState.split(",")[1]+" is in an unknown state.");
-                        }
-                        // ---------------------------------------------------
+                //         if(resp.equals("Committed")){
+                //             execute(Command.Commit, commandArgs);
+                //         }else if (resp.equals("Aborted")){
+                //             execute(Command.Abort, commandArgs);
+                //         }else if (resp.equals("Staged")){
+                //             execute(Command.Prepare, commandArgs);
+                //         }else{
+                //             System.out.println("Transaction "+tpcState.split(",")[1]+" is in an unknown state.");
+                //         }
+                //         // ---------------------------------------------------
 
-                }
+                // }
                 
-                
-                System.out.println("Waiting for input from MW...");
-                while((inputLine = in.readLine()) != null){ 
-                    //CLIENT COMMAND HANDLING
-                    arguments = parse(inputLine);
-                    try{
-                        Command cmd = Command.fromString((String)arguments.elementAt(0));
-                        try{
-                            execute(cmd, arguments);
-                            if(!inputLine.contains("GetData") && !inputLine.contains("Quit") && !inputLine.contains("Query") && !inputLine.contains("Crash")){
-                                if(!stagedTrans.createNewFile()){
-                                    //if already exists committed transaction file
-                                    System.out.println("Found stagedTrans" + s_name + ".txt");
-                                    FileWriter fw = new FileWriter(stagedTrans, true);
-                                    FileReader fr = new FileReader(stagedTrans);
-                                    BufferedReader test = new BufferedReader(fr);
-                                    String line = "";
-                                    while((line = test.readLine()) != null){
-                                        System.out.println(line);
-                                    }
-                                    //Committed Transaction file will contain each transaction in chronological order (of commits)
-                                    // CT file will not have Transaction ID except for within Commands
-                                    // Should be able to safely re-execute each command
-                                    sfbw = new BufferedWriter(fw);
-                                }else{
-                                    //created new staged trans
-                                    System.out.println("Created new stagedTrans" + s_name + ".txt");
-                                    FileWriter fw = new FileWriter(stagedTrans, true);
-                                    sfbw = new BufferedWriter(fw);
-                                }
-                                if(!inputLine.contains("Prepare")) sfbw.write(inputLine);
-                                if(!inputLine.contains("Prepare")) sfbw.newLine();
-                                sfbw.close();
-                                System.out.println("Wrote to stagedTrans and closed");
+                while(in2PC){
+                    switch(tpcState.split(",")[0]){
+                        case "receivedVoteReq":{
+
+                            if(m_resourceManager.getCrashStatus() == 1){
+                                System.out.println("Resource manager server (name: " + this.s_name + ") about to crash with mode: 1");
+                                System.out.println("    - After receiving vote request, but before sending answer...");
+                                System.exit(1);
                             }
+                            
+                            FileReader fr = new FileReader(committedTrans);
+                            BufferedReader br = new BufferedReader(fr);
+                            
+                            String line = "";
+                            String lastLine = "";
+                            while((line = br.readLine()) != null){
+                                lastLine = line;
+                            }
+                            //line is now last operation executed
+                            br.close();
+                            
+                            System.out.println("Upon crash recovery, determined last 2PC log: " + tpcState);
+                            
+                            String decision = "";
+                            if(lastLine.split(",")[0] == "Abort"){
+                                decision = "NO";
+                                //out.println("NO");
+                            }else{
+                                decision = "YES";
+                            }
+                            in2PC = true;
+                            
+                            tpcState = "madeDecision," + tpcState.split(",")[1] + "," + decision;
+                            
+                            System.out.println("Made decision [" + decision + "]");
+                            
+                            FileWriter tpcLog = new FileWriter(twoPCLog, true);
+                            BufferedWriter bw = new BufferedWriter(tpcLog);
+                            
+                            bw.write("madeDecision," + tpcState.split(",")[1] + "," + decision);
+                            bw.newLine();
+                            bw.close();
+                            
+                            //out.println("YES");
+                            //System.out.println("Sent decision [" + decision + "] to MW.");
+                            break;
+                        }
+                        case "madeDecision":{
+                            if(m_resourceManager.getCrashStatus() == 2){
+                                System.out.println("Resource manager server (name: " + this.s_name + ") about to crash with mode: 2");
+                                System.out.println("    - After deciding which answer to send...");
+                                System.exit(1);
+                            }
+                            
+                            FileReader fr = new FileReader(twoPCLog);
+                            BufferedReader br = new BufferedReader(fr);
+                            
+                            String line = "";
+                            String lastLine = "";
+                            while((line = br.readLine()) != null){
+                                lastLine = line;
+                            }
+                            br.close();
+                            
+                            out.println(lastLine.split(",")[2]); //send decision to middleware
+                            System.out.println("Sent decision [" + lastLine.split(",")[2] + "] to MW.");
+                            
+                            FileWriter tpcLog = new FileWriter(twoPCLog, true);
+                            BufferedWriter bw = new BufferedWriter(tpcLog);
+                            
+                            bw.write("sentDecision," + lastLine.split(",")[1] + "," + lastLine.split(",")[2]);
+                            bw.newLine();
+                            tpcState = "sentDecision," + lastLine.split(",")[1] + "," + lastLine.split(",")[2];
+                            bw.close();
+                            
+                            break;
+                        }
+                        case "sentDecision":{
+                            
+                            // mwSocket = new Socket(mwIP, mwPort);
+                            // mw_out = new PrintWriter(clientSocket.getOutputStream(), true);
+                            // mw_in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+                            
+                            
+                            if(m_resourceManager.getCrashStatus() == 3){
+                                System.out.println("Resource manager server (name: " + this.s_name + ") about to crash with mode: 3");
+                                System.out.println("    - After sending answer...");
+                                System.exit(1);
+                            }
+                            
+                            String masterDecision = in.readLine(); //WAITS TO RECEIVE ABORT OR COMMIT FROM MIDDLEWARE
+                            System.out.println("Received decision to: " + masterDecision);
+                            
+                            FileReader fr = new FileReader(twoPCLog);
+                            BufferedReader br = new BufferedReader(fr);
+                            
+                            String line = "";
+                            String lastLine = "";
+                            while((line = br.readLine()) != null){
+                                lastLine = line;
+                            }
+                            br.close();
+                            
+                            FileWriter tpcLog = new FileWriter(twoPCLog, true);
+                            BufferedWriter bw = new BufferedWriter(tpcLog);
+                            
+                            bw.write("receivedDecision," + lastLine.split(",")[1] + "," + masterDecision);
+                            bw.newLine();
+                            tpcState = "receivedDecision," + lastLine.split(",")[1] + "," + masterDecision;
+                            bw.close();
+                            
+                            if(m_resourceManager.getCrashStatus() == 4){
+                                System.out.println("Resource manager server (name: " + this.s_name + ") about to crash with mode: 4");
+                                System.out.println("    - After receiving decision but before committing/aborting...");
+                                System.exit(1);
+                            }
+                            
+                            if(masterDecision.split(",")[0].equals("Commit")){
+                                //decision is to commit
+                                Vector<String> asd = new Vector<String>();
+                                asd.add("Commit");
+                                asd.add(masterDecision.split(",")[1]);
+                                System.out.println("Performed Commit," + masterDecision.split(",")[1]);
+                                execute(Command.Commit, asd);
+                                in2PC = false;
+                            }else {
+                                //decision is to abort
+                                Vector<String> asd = new Vector<String>();
+                                asd.add("Abort");
+                                asd.add(masterDecision.split(",")[1]);
+                                System.out.println("Performed Abort," + masterDecision.split(",")[1]);
+                                execute(Command.Abort, asd);
+                                in2PC = false;
+                            }
+                            
+                            break;
+                        }
+                        case "receivedDecision":{
+                            FileReader fr = new FileReader(twoPCLog);
+                            BufferedReader br = new BufferedReader(fr);
+                            
+                            String line = "";
+                            String lastLine = "";
+                            while((line = br.readLine()) != null){
+                                lastLine = line;
+                            }
+                            br.close();
+                            
+                            if(lastLine.split(",")[2].equals("Commit")){
+                                //decision is to commit
+                                Vector<String> asd = new Vector<String>();
+                                asd.add("Commit");
+                                asd.add(lastLine.split(",")[1]);
+                                execute(Command.Commit, asd);
+                                in2PC = false;
+                            }else {
+                                //decision is to abort
+                                Vector<String> asd = new Vector<String>();
+                                asd.add("Abort");
+                                asd.add(lastLine.split(",")[1]);
+                                execute(Command.Commit, asd);
+                                in2PC = false;
+                            }
+                            FileWriter tpcLog = new FileWriter(twoPCLog, true);
+                            BufferedWriter bw = new BufferedWriter(tpcLog);
+                            
+                            bw.write("none");
+                            bw.newLine();
+                            tpcState = "none";
+                            bw.close();
+                            
+                            break;
+                        }
+                    }
+                }
+
+                //System.out.println("Waiting for input from MW...");
+                try{
+                    while((inputLine = in.readLine()) != null){ 
+                        //CLIENT COMMAND HANDLING
+                        arguments = parse(inputLine);
+                        try{
+                            Command cmd = Command.fromString((String)arguments.elementAt(0));
+                            try{
+                                execute(cmd, arguments);
+                                if(!inputLine.contains("GetData") && !inputLine.contains("Quit") && !inputLine.contains("Query") && !inputLine.contains("Crash")){
+                                    if(!stagedTrans.createNewFile()){
+                                        //if already exists committed transaction file
+                                        System.out.println("Found stagedTrans" + s_name + ".txt");
+                                        FileWriter fw = new FileWriter(stagedTrans, true);
+                                        FileReader fr = new FileReader(stagedTrans);
+                                        BufferedReader test = new BufferedReader(fr);
+                                        String line = "";
+                                        while((line = test.readLine()) != null){
+                                            System.out.println(line);
+                                        }
+                                        sfbw = new BufferedWriter(fw);
+                                    }else{
+                                        //created new staged trans
+                                        System.out.println("Created new stagedTrans" + s_name + ".txt");
+                                        FileWriter fw = new FileWriter(stagedTrans, true);
+                                        sfbw = new BufferedWriter(fw);
+                                    }
+                                    if(!inputLine.contains("Prepare")) sfbw.write(inputLine);
+                                    if(!inputLine.contains("Prepare")) sfbw.newLine();
+                                    sfbw.close();
+                                    System.out.println("Wrote to stagedTrans and closed");
+                                }
+                            }catch (Exception e){
+                                System.out.println("Execute crapped out.");
+                                out.println("Execute crapped out.");
+                                //e.printStackTrace();
+                            }
+                            
                         }catch (Exception e){
-                            System.out.println("Execute crapped out.");
-                            out.println("Execute crapped out.");
+                            System.out.println("Unknown command: " + inputLine);
+                            out.println("Unknown command: " + inputLine);
                             e.printStackTrace();
                         }
-                        
-                    }catch (Exception e){
-                        System.out.println("Unknown command: " + inputLine);
-                        out.println("Unknown command: " + inputLine);
-                        e.printStackTrace();
+                        //out.println("Success!");
                     }
-                    //out.println("Success!");
+                }catch(Exception e){
+                    // IF REACHED HERE, MW CRASHED ---- 
+                FileReader fr = new FileReader(twoPCLog);
+                BufferedReader br = new BufferedReader(fr);
+                    
+                String lastLine = "";
+                String line = "";
+                while((line = br.readLine()) != null){
+                    lastLine = line;
                 }
+                switch(lastLine.split(",")[0]){
+                    case "receivedVoteReq":{
+                        //shouldnt hit here
+                        break;
+                    }
+                    case "madeDecision":{
+                        if(lastLine.split(",")[2].equals("YES")){
+                            System.out.println("Blocking indefinitely because voted: YES...");
+                            while(true){
+                                Thread.sleep(500);
+                            } //block indefinitely
+                        }else{
+                            Date startTime = new Date();
+                            while(((System.currentTimeMillis() - startTime.getTime()) < 30000)){
+                                //wait for 
+                                System.out.println("Waiting on MW...");
+                                Thread.sleep(500);
+                            }
+                            System.out.println("Executing Abort," +  lastLine.split(",")[1] + " From Timeout");
+                            Vector<String> asd = new Vector<String>();
+                            asd.add("Abort");
+                            asd.add(lastLine.split(",")[1]);
+                            execute(Command.Abort, asd);
+                        }
+                        break;
+                    }
+                    case "sentDecision":{
+                        if(lastLine.split(",")[2].equals("YES")){
+                            System.out.println("Blocking indefinitely because voted: YES...");
+                            while(true){
+                                Thread.sleep(500);
+                            } //block indefinitely
+                        }else{
+                            Date startTime = new Date();
+                            while(((System.currentTimeMillis() - startTime.getTime()) < 30000)){
+                                //wait for 
+                                System.out.println("Waiting on MW...");
+                                Thread.sleep(500);
+                            }
+                            System.out.println("Executing Abort," +  lastLine.split(",")[1] + " From Timeout");
+                            Vector<String> asd = new Vector<String>();
+                            asd.add("Abort");
+                            asd.add(lastLine.split(",")[1]);
+                            execute(Command.Abort, asd);
+                        }
+                        break;
+                    }
+                    case "receivedDecision":{
+
+                        break;
+                    }
+                }
+                
+                }
+                
+                
                 sfbw.close();
                 in.close();
                 out.close();
@@ -715,9 +957,7 @@ public class RMServer
                     }
                     cfbw.close();
 
-                    //--------------------------------LINE OF BRICKAGE------------------------------- 
                     System.out.println("Committed: " + arguments.elementAt(1));
-                    //-------------------------------------------------------------------
 
                     break;
                 }
@@ -732,7 +972,7 @@ public class RMServer
                     String line = "";
                     while((line = reader.readLine()) != null){
                         Vector<String> args = parse(line);
-                        if(args.elementAt(1).equals(arguments.elementAt(1))){ //if it is the XID of the Committed Transaction
+                        if(args.elementAt(1).equals(arguments.elementAt(1))){ //if it is the XID of the Aborted Transaction
                             //ignore because we are 'erasing' the operations of this transaction
                         }else{
                             tempWriter.write(line);
@@ -747,7 +987,7 @@ public class RMServer
                     if(temp.renameTo(stagedTrans)){
                         //succesfully renamed tempFile
                     }
-                    
+                    //System.out.println("Aborted: " +arguments.elementAt(1));
                     out.println("Aborted: " + arguments.elementAt(1));
                     break;
                 }
@@ -777,8 +1017,14 @@ public class RMServer
                     }
                     //line is now last operation executed
                     br.close();
+
+                    String decision = "";
+                    if(lastLine.contains("Abort")){
+                        decision = "NO";
+                    }else{
+                        decision = "YES";
+                    }
                     
-                    String decision = "YES";
                     
                     tpcLog = new FileWriter(twoPCLog, true);
                     bw = new BufferedWriter(tpcLog);
@@ -798,7 +1044,7 @@ public class RMServer
                     out.println(decision);
                     
                     //IF DECISION == "NO" THEN START TIMER
-                    //IF TIMER 
+
                     tpcLog = new FileWriter(twoPCLog, true);
                     bw = new BufferedWriter(tpcLog);
                     
@@ -816,7 +1062,21 @@ public class RMServer
                     
                     String masterDecision = in.readLine(); //waits for commit/abort -- Commit,xid
                     
-                    
+                    if(masterDecision == null){
+                        if(Boolean.parseBoolean(decision)){
+                            //block indefinitely
+                            while(true);
+                        }else{
+                            Date startTime = new Date();
+                            while(((System.currentTimeMillis() - startTime.getTime()) < 30000)){
+                                //wait for MW
+                                System.out.println("Waiting on MW");
+                                Thread.sleep(500);
+                            }
+                            masterDecision = "Abort," + arguments.elementAt(1);
+                        }
+                    }
+
                     tpcLog = new FileWriter(twoPCLog, true);
                     bw = new BufferedWriter(tpcLog);
                     
@@ -824,7 +1084,7 @@ public class RMServer
                     bw.newLine();
                     bw.close();
                     
-                    System.out.println("Received decision from MW");
+                    System.out.println("Received decision [" + masterDecision + "] from MW");
                     
                     if(m_resourceManager.getCrashStatus() == 4){
                         System.out.println("Resource manager server (name: " + this.s_name + ") about to crash with mode: 4");
@@ -834,9 +1094,10 @@ public class RMServer
                     
                     Command cmdexec = masterDecision.split(",")[0].equals("Commit") ? Command.Commit : Command.Abort;
                     Vector<String> asd = new Vector<String>();
-                    asd.add(arguments.elementAt(0));
-                    asd.add(arguments.elementAt(1));
+                    asd.add(masterDecision.split(",")[0]);
+                    asd.add(masterDecision.split(",")[1]);
                     //EXECUTE COMMIT/ABORT
+                    System.out.println("Performed: " + masterDecision.split(",")[0]);
                     execute(cmdexec, asd);
                     
                     

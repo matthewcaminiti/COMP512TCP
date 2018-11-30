@@ -48,6 +48,7 @@ public enum Command {
 	Prepare("Request a decision from the RMs", "<xid>"),
 	GetTransState("Get transaction state","<xid>,<ServerName>"),
 	QueryTransaction("Query the status of a transaction", "<xid>,<whoami>"),
+	Ping("Wake up a server","<ServerName>"),
 	Shutdown("Shutdown the whole operation", "");
 
 	String m_description;
