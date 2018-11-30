@@ -143,6 +143,7 @@ public class RMServer
                     System.out.println("Error when accessing stagedTrans. : ");
                     e.printStackTrace();
                 }
+
                 try{
                     twoPCLog.createNewFile();
                     FileReader fr = new FileReader(twoPCLog);
@@ -163,6 +164,7 @@ public class RMServer
                 while(in2PC){
                     switch(tcpState.split(",")[0]){
                         case "receivedVoteReq":{
+
                             if(m_resourceManager.getCrashStatus() == 1){
                                 System.out.println("Resource manager server (name: " + this.s_name + ") about to crash with mode: 1");
                                 System.out.println("    - After receiving vote request, but before sending answer...");
