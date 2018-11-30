@@ -882,8 +882,9 @@ public class RMServer
                     if(lastLine.split(",")[0] == "Abort"){
                         decision = "NO";
                         //out.println("NO");
+                    }else{
+                        decision = "YES";
                     }
-                    decision = "YES";
                     
                     tpcLog = new FileWriter(twoPCLog, true);
                     bw = new BufferedWriter(tpcLog);

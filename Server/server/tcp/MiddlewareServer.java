@@ -13,12 +13,9 @@ public class MiddlewareServer
     
     public ResourceManager rm;
     public String s_name;
-<<<<<<< HEAD
-
-    private int timeoutMs = 30000;
-=======
     
->>>>>>> e92b954b08e7f4551e8281891b32d4a63671a27b
+    public int timeoutMs = 30000;
+    
     public boolean carRMDown = false;
     public boolean flightRMDown = false;
     public boolean roomRMDown = false;
