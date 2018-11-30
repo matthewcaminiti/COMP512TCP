@@ -117,7 +117,7 @@ public class MiddlewareServer
                     //if already exists committed transaction file
                     System.out.println("Found committedTrans.txt");
                     FileReader fr = new FileReader(committedTrans);
-                    //Committed Transaction file will contain each transaction in chronological order (of commits)
+                    // Committed Transaction file will contain each transaction in chronological order (of commits)
                     // CT file will not have Transaction ID except for withing Commands
                     BufferedReader fbr = new BufferedReader(fr);
                     String line;
@@ -1256,6 +1256,30 @@ public class MiddlewareServer
                                 r_out.println(inputLine);
                                 String rresp = r_in.readLine();
                                 if(showPrints) out.println("Aborted transaction ID: " + arguments.elementAt(1));
+                                break;
+                            }
+                            case QueryTransaction:{
+
+                                int xid = Integer.valueOf(arguments.elementAt(1).trim());
+                                String server = arguments.elementAt(2).trim();
+                                PrintWriter out;
+                                if(server.equals("Flight")){
+                                    out = f_out;
+                                }else if(server.equals("Car")){
+                                    out = c_out;
+                                }else if(server.equals("Room")){
+                                    out = r_out;
+                                }else{
+                                    break;
+                                }
+                                
+                                if(!tm.transactionExist(xid)){
+                                    out.println("Transaction with xid " + xid + "does not exist");
+                                    break;
+                                }
+
+
+
                                 break;
                             }
                             default:

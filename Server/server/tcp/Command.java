@@ -46,7 +46,7 @@ public enum Command {
 	GetCrashStatus("Get crash status of server", "<ServerName>"),
 	ResetRMCrash("Reset crash status of RM server [internal use - not a client command]", ""),
 	Prepare("Request a decision from the RMs", "<xid>"),
-	QueryTransaction("Query the status of a transaction", "<xid"),
+	QueryTransaction("Query the status of a transaction", "<xid>", "<whoami>"),
 	Shutdown("Shutdown the whole operation", "");
 
 	String m_description;

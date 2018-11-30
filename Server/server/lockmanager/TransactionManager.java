@@ -198,6 +198,10 @@ public class TransactionManager
         }
         return temp;
     }
+
+    public int getTransactionStatus(int xid){
+        
+    }
     
     public String[] getResponseHistory(int transactionId)
     {
