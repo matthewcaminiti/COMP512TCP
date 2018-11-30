@@ -14,6 +14,7 @@ public class MiddlewareServer
     public ResourceManager rm;
     public String s_name;
 
+    private int timeoutMs = 30000;
     public boolean carRMDown = false;
     public boolean flightRMDown = false;
     public boolean roomRMDown = false;
@@ -142,10 +143,13 @@ public class MiddlewareServer
                 Vector<String> arguments = new Vector<String>();
                 String inputLine;
                 boolean isStarted = false;
+
                 //Perform 2PC before taking any more client commands
                 while(in2PC){
+
                     String twoPCState = tm.getMiddlewareState();
                     switch(twoPCState.split(",")[0]){
+
                         case "beforeVote":{
                             //send vote request
                             if(tm.getCrashStatus() == 1){
@@ -156,48 +160,79 @@ public class MiddlewareServer
                             c_out.println("Prepare," + twoPCState.split(",")[1]);
                             r_out.println("Prepare," + twoPCState.split(",")[1]);
                             tm.sentVote(Integer.parseInt(twoPCState.split(",")[1]));
+                            
                             if(tm.getCrashStatus() == 2){
                                 System.out.println("Middleware server about to crash with mode: 2");
                                 System.exit(1);
                             }
                             break;
                         }
+
                         case "waitingFor":{
-                            //cycle through each RM to get its response
-                            if(twoPCState.contains("Flight")){
-                                String f_resp = f_in.readLine();
-                                tm.receivedVote("Flight", Integer.parseInt(twoPCState.split(",")[1]));
-                                if(tm.getCrashStatus() == 3){
-                                    System.out.println("Middleware server about to crash with mode: 3");
-                                    System.exit(1);
-                                }
-                                votes[0] = f_resp == "YES" ? 1 : 0;
-                            }else if(twoPCState.contains("Room")){
-                                String r_resp = r_in.readLine();
-                                tm.receivedVote("Room", Integer.parseInt(twoPCState.split(",")[1]));
-                                votes[1] = r_resp == "YES" ? 1 : 0;
-                            }else if(twoPCState.contains("Car")){
-                                String c_resp = c_in.readLine();
-                                tm.receivedVote("Car", Integer.parseInt(twoPCState.split(",")[1]));
-                                votes[2] = c_resp == "YES" ? 1 : 0;
-                            }else if(twoPCState.contains("none")){
-                                //all votes received
-                                tm.receivedAllVotes(votes, Integer.parseInt(twoPCState.split(",")[1]));
-                                if(tm.getCrashStatus() == 4){
-                                    System.out.println("Middleware server about to crash with mode: 4");
-                                    System.exit(1);
+
+                            Date startTime = new Date();
+                            boolean allVotesReceived = false;
+                            while(((System.currentTimeMillis() - startTime.getTime()) < this.timeoutMs) && !allVotesReceived){
+                                //cycle through each RM to get its response
+                                
+                                if(twoPCState.contains("none")){
+                                    //all votes received
+                                    m.receivedAllVotes(votes, Integer.parseInt(twoPCState.split(",")[1]));
+                                    allVotesReceived = true;
+                                    if(tm.getCrashStatus() == 4){
+                                      System.out.println("Middleware server about to crash with mode: 4");
+                                       System.exit(1);
+                                    }
+                                }else{
+                                    if(twoPCState.contains("Flight")){
+                                        String f_resp = f_in.readLine();
+                                        tm.receivedVote("Flight", Integer.parseInt(twoPCState.split(",")[1]));
+                                        if(tm.getCrashStatus() == 3){
+                                            System.out.println("Middleware server about to crash with mode: 3");
+                                            System.exit(1);
+                                        }
+                                        votes[0] = f_resp == "YES" ? 1 : 0;
+                                    }
+                                    
+                                    if(twoPCState.contains("Room")){
+                                        String r_resp = r_in.readLine();
+                                        tm.receivedVote("Room", Integer.parseInt(twoPCState.split(",")[1]));
+                                        votes[1] = r_resp == "YES" ? 1 : 0;
+                                    }
+                                    
+                                    if(twoPCState.contains("Car")){
+                                        String c_resp = c_in.readLine();
+                                        tm.receivedVote("Car", Integer.parseInt(twoPCState.split(",")[1]));
+                                        otes[2] = c_resp == "YES" ? 1 : 0;
+                                    }
                                 }
                             }
+
+                            if(!allVotesReceived){
+                                if(twoPCState.contains("Car")){ this.carRMDown = true; }
+                                if(twoPCState.contains("Room")){ this.roomRMDown = true; }
+                                if(twoPCState.contains("Flight")){ this.flightRMDown = true; }
+
+                                //HANDLE SERVER(S) BEING DOWN... abort transaction
+                                //Communicate this to the Resource Managers
+
+                            }
+
                             break;
                         }
+
                         case "receivedAllVotes":{
+
                             tm.makeDecision(twoPCState.split(",")[1], Integer.parseInt(twoPCState.split(",")[2]));
+
                             if(tm.getCrashStatus() == 5){
                                 System.out.println("Middleware server about to crash with mode: 5");
                                 System.exit(1);
                             }
+
                             break;
                         }
+
                         case "madeDecision":{
                             //send decisions
                             Boolean decision = Boolean.parseBoolean(twoPCState.split(",")[1]);
