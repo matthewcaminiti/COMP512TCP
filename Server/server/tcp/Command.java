@@ -38,9 +38,9 @@ public enum Command {
 	Timeout("Client-side action timeout", ""),
 
 	GetData("Get data for atomicity", "<xid>,<objType>,<objKey>"),
-	RemoveReservation("Remove a customer's reservation from itself","<xid><CustomerID><FlightNumber><RMType>"),
+	RemoveReservation("Remove a customer's reservation from itself","<xid>,<CustomerID>,<FlightNumber>,<RMType>"),
 	CrashRM("Force crash a specific RM","<RMName>,<mode>"),
-	CrashRMServer("Force crash of a specific RM Server [internal use - not a client command]","<mode>"),
+	CrashRMServer("Force crash of a specific RM Server [internal use - not a client command]","<ServerName>,<mode>"),
 	CrashTM("Force crash of the Middleware","<mode>"),
 	ResetCrash("Reset crash status of server", "<ServerName>"),
 	GetCrashStatus("Get crash status of server", "<ServerName>"),

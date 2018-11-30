@@ -13,7 +13,7 @@ public class MiddlewareServer
     
     public ResourceManager rm;
     public String s_name;
-
+    
     public boolean carRMDown = false;
     public boolean flightRMDown = false;
     public boolean roomRMDown = false;
@@ -22,14 +22,17 @@ public class MiddlewareServer
     
     
     public static Socket flightSocket;
+    public static String fip;
     public static PrintWriter f_out;
     public static BufferedReader f_in;
     
     public static Socket roomSocket;
+    public static String rip;
     public static PrintWriter r_out;
     public static BufferedReader r_in;
     
     public static Socket carSocket;
+    public static String cip;
     public static PrintWriter c_out;
     public static BufferedReader c_in;
     
@@ -55,16 +58,19 @@ public class MiddlewareServer
         serverSocket = new ServerSocket(port);
         
         flightSocket = new Socket(f_ip, portnum);
+        fip = f_ip;
         f_out = new PrintWriter(flightSocket.getOutputStream(), true);
         f_in = new BufferedReader(new InputStreamReader(flightSocket.getInputStream()));
         System.out.println("Connected to Flight Server /" + f_ip + ":" + portnum);
         
         roomSocket = new Socket(r_ip, portnum);
+        rip = r_ip;
         r_out = new PrintWriter(roomSocket.getOutputStream(), true);
         r_in = new BufferedReader(new InputStreamReader(roomSocket.getInputStream()));
         System.out.println("Connected to Room Server /" + r_ip + ":" + portnum);
         
         carSocket = new Socket(c_ip, portnum);
+        cip = c_ip;
         c_out = new PrintWriter(carSocket.getOutputStream(), true);
         c_in = new BufferedReader(new InputStreamReader(carSocket.getInputStream()));
         System.out.println("Connected to Car Server /" + c_ip + ":" + portnum);
@@ -210,11 +216,11 @@ public class MiddlewareServer
                                     System.out.println("Middleware server about to crash with mode: 6");
                                     System.exit(1);
                                 }
-
+                                
                                 r_out.println("Commit," + twoPCState.split(",")[1]);
                                 tm.sentDecision("Room", decision, Integer.parseInt(twoPCState.split(",")[1]));
                                 System.out.println("Sent decision: " + decision + "to Room RM");
-
+                                
                                 c_out.println("Commit," + twoPCState.split(",")[1]);
                                 tm.sentDecision("Car", decision, Integer.parseInt(twoPCState.split(",")[1]));
                                 System.out.println("Sent decision: " + decision + "to Car RM");
@@ -468,6 +474,23 @@ public class MiddlewareServer
                                     while(waitingForVotes){
                                         if(twoPCState.contains("Flight")){
                                             String f_resp = f_in.readLine();
+                                            //----------------READLINE THROWS NULL IF LOST CONNECTION!----------------------
+                                            if(f_resp == null){
+                                                while(true){
+                                                    try{
+                                                        flightSocket = new Socket(fip, portnum);
+                                                        f_out = new PrintWriter(flightSocket.getOutputStream(), true);
+                                                        f_in = new BufferedReader(new InputStreamReader(flightSocket.getInputStream()));
+                                                        System.out.println("Connected to Flight Server /" + fip + ":" + portnum);
+                                                        break;
+                                                    }catch(Exception e){
+                                                        //should throw I/O when socket is closed, or not connected
+                                                        System.out.println("I/O error reconnecting to Flight Server");
+                                                    }
+                                                    
+                                                }
+                                                f_resp = f_in.readLine();
+                                            }
                                             tm.receivedVote("Flight", Integer.parseInt(twoPCState.split(",")[1]));
                                             //SEND SIGNAL TO FLIGHT RM
                                             System.out.println("Received Flight Vote: " + f_resp);
@@ -816,14 +839,17 @@ public class MiddlewareServer
                                 case CrashRM:
                                 {
                                     int mode = Integer.valueOf(arguments.elementAt(2).trim());
-                                    String cmdString = "CrashRMServer, " + mode;
                                     String server_name = arguments.elementAt(1).trim();
+                                    String cmdString = "CrashRMServer, " + server_name + "," + mode;
                                     if(server_name.equals("Flight")){
-                                        f_out.write(cmdString);
+                                        f_out.println(cmdString);
+                                        out.println("Set Flight RM crash mode to " + mode + ".");
                                     }else if(server_name.equals("Car")){
-                                        c_out.write(cmdString);
+                                        c_out.println(cmdString);
+                                        out.println("Set Car RM crash mode to + " + mode + ".");
                                     }else if(server_name.equals("Room")){
-                                        r_out.write(cmdString);
+                                        r_out.println(cmdString);
+                                        out.println("Set Room RM crash mode to + " + mode + ".");
                                     }else{
                                         System.out.println("Incorrect RM specified [" + arguments.elementAt(1).trim() + "]");
                                         System.out.println("RM name must be Flight | Car | Room");
@@ -870,9 +896,9 @@ public class MiddlewareServer
                                         resp = "Crash status of middleware server: " + String.valueOf(tm.getCrashStatus());
                                     }else{
                                         resp = "Incorrect server specified [" + server_name + "]\n" + 
-                                                "Server name must be Flight | Car | Room | Middleware";
+                                        "Server name must be Flight | Car | Room | Middleware";
                                     }
-
+                                    
                                     System.out.println(resp);
                                     break;
                                 }
