@@ -164,9 +164,8 @@ public class RMServer
                     System.out.println("Error when accessing stagedTrans. : ");
                     e.printStackTrace();
                 }
-
-                boolean checkWithMiddleware = false;
                 Vector<String> commandArgs = new Vector<String>();
+                boolean checkWithMiddleware = false;
                 try{
                     twoPCLog.createNewFile();
                     FileReader fr = new FileReader(twoPCLog);
@@ -177,9 +176,11 @@ public class RMServer
                     while((line = br.readLine()) != null){
                         lastLine = line;
                     }
-
-                    commandArgs = parse(lastLine);
                     
+                    Vector<String> logArgs = parse(lastLine);
+                    commandArgs.add(logArgs.elementAt(2));
+                    commandArgs.add(logArgs.elementAt(1));
+
                     if(lastLine.contains("Commit")){
                         execute(Command.Commit, commandArgs);
                     }else if(lastLine.contains("Abort")){
